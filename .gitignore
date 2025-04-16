@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # VSCode
 .vscode/
 
@@ -10,3 +11,6 @@ target/
 
 # Gradle
 .gradle/
+=======
+*.DS_Store
+>>>>>>> upstream/main
