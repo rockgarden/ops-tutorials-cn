@@ -62,13 +62,13 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
    `git fetch upstream`
 5. 合并拉取的数据
    `git merge upstream/master`
-   （又联系了一次，upstream/master，前者是你要合并的数据，后者是你要合并到的数据（在这里就是 B 本地的 durit 了）） 
+   （又联系了一次，upstream/master，前者是你要合并的数据，后者是你要合并到的数据（在这里就是 B 本地的 durit 了））
 6. 在 B 修改了本地部分内容后，把本地的更改推送到 B 的远程 github 上。
    git add 修改过的文件
    git commit -m "注释"
    git push origin master
 7. 然后 B 还想让修改过的内容也推送到 A 上，这就要发起 pull request 了。
-   打开 B 的 https://gitlab.com/B/durit
+   打开 B 的 <https://gitlab.com/B/durit>
    点击 Pull Requests
    单击 new pull request
    单击 create pull request
@@ -86,14 +86,16 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
    sudo firewall-cmd --permanent --add-service=http
    sudo systemctl reload firewalld
 
-   Next, install Postfix to send notification emails. If you want to use another solution to send emails please skip this step and configure an external SMTP server after GitLab has been installed. 
+   Next, install Postfix to send notification emails. If you want to use another solution to send emails please skip this step and configure an external SMTP server after GitLab has been installed.
    sudo yum install postfix
    sudo systemctl enable postfix
    sudo systemctl start postfix
    During Postfix installation a configuration screen may appear. Select 'Internet Site' and press enter. Use your server's external DNS for 'mail name' and press enter. If additional screens appear, continue to press enter to accept the defaults.
 
-2. In GreatWall add the GitLab package repository and install the package 
+2. In GreatWall add the GitLab package repository and install the package
    安装 cent-os 的配置时，可不新建 repo 文件，直接在 CentOS-Base.repo 最后加入文档中描述的内容：
+
+   ```txt
    [gitlab-ce]
    name=Gitlab CE Repository
    baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el$releasever/
@@ -110,6 +112,7 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
    > enable=1
    > gpgkey= https://packages.gitlab.com/gpg.key
    > EOF
+   ```
 
    后保存并运行：
    yum clean all
@@ -118,10 +121,11 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
    yum install gitlab-ce
 
    注意：若已经运行过 Add the GitLab package repository 命令
-   curl <https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh> | sudo bash
+   `curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash`
    需要删除  gitlab_gitlab-ce.repo / gitlab_gitlab-ee.repo 否则仍使用海外地址。
 
    Next, install the GitLab package. Change `http://gitlab.example.com` to the URL at which you want to access your GitLab instance. Installation will automatically configure and start GitLab at that URL. HTTPS requires additional configuration after installation.
+
    接下来，安装 GitLab 软件包。将 <http://gitlab.example.com> 更改为您要访问您的GitLab实例的URL。安装将自动配置并启动该URL的GitLab。HTTPS安装后需要额外的配置。
 
    `sudo EXTERNAL_URL="http://gitlab.example.com"`
@@ -164,6 +168,59 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
    ssh wangkan$ vim ssh_config
    ssh wangkan$ vim sshd_config
 
+## Update In CentOS7
+
+/// 运行备份
+`sudo gitlab-backup create`
+// 不压缩备份：`sudo gitlab-backup create STRATEGY=copy`
+/// 备份文件存放路径：`['backup_path'] = "/data/gitlab/backups"`
+/// 异地备份：`scp root@192.168.97.115://data/gitlab/backups/1667540632_2022_11_04_14.0.12_gitlab_backup.tar 1667540632_2022_11_04_14.0.12_gitlab_backup.tar`
+/// 查看版本
+`sudo rpm -q gitlab-ce`
+// 确认升级路径<https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/>
+/// 在升级前所有监控>后台迁移（Background Migrations）迁移都必须处于“完成”状态
+/// 离线更新
+/// 下载地址<https://packages.gitlab.com/gitlab/gitlab-ce>
+`rpm -Uvh gitlab-ee-<version>.rpm`
+
+/// 在线更新到最新版本
+
+```sh
+yum list | grep gitlab
+yum --showduplicates list gitlab-ce
+sudo yum install gitlab-ce
+sudo EXTERNAL_URL=" https://gitlab.example.com" yum install -y gitlab-ce
+```
+
+/// 在线更新到指定版本
+
+```sh
+sudo yum install gitlab-ce-14.3.6-ce.0.el7
+sudo yum install -y gitlab-ce-14.3.6
+sudo yum install gitlab-ce-<version>
+gitlab-psql -V
+psql (PostgreSQL) 12.7
+/opt/gitlab/var/unicorn/puma.pid
+['log_directory'] = "/var/log/gitlab/unicorn"
+```
+
+/// 离线更新
+
+// <https://docs.gitlab.com/ee/update/package/downgrade.html>
+
+// If on Centos: remove the current package
+
+```sh
+sudo yum remove gitlab-ce
+sudo gitlab-backup restore BACKUP=1649741711_2022_04_12_14.0.12
+sudo gitlab-ctl reconfigure
+sudo gitlab-ctl restart
+sudo gitlab-rake gitlab:check SANITIZE=true
+```
+
+Upgrade packaged PostgreSQL server
+`sudo du -sh /var/opt/gitlab/postgresql/data`
+
 ## 配置
 
 /// 开机启动
@@ -174,6 +231,8 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 1. 启用 HTTPS
    /// 默认情况下，omnibus-gitlab 不使用 HTTPS。如果要为 gitlib.eastcomccmp.top.启用 HTTPS，请将以下语句添加到/etc/gitlab/gitlab.rb：
    `sudo vim /etc/gitlab/gitlab.rb`
+
+   ```rb
        # 启用 https
        external_url ' https://gitlib.eastcomccmp.top.'
        ## 配置 nginx
@@ -181,6 +240,8 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
        nginx['redirect_http_to_https'] = true
        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.crt"
        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.key"
+   ```
+
    /// 创建/etc/gitlab/ssl 目录并在那里复制您的密钥 gitlib.eastcomccmp.top.key 和证书 gitlib.eastcomccmp.top.crt。
    `sudo mkdir -p /etc/gitlab/ssl`
    `sudo chmod 755 /etc/gitlab/ssl`
@@ -293,235 +354,74 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 
    重启服务：`sudo gitlab-ctl reconfigure`
 
-GitLab Runner IP SAN Error
-Supported options for self-signed certificates
-https://docs.gitlab.com/runner/configuration/tls-self-signed.html#supported-options-for-self-signed-certificates
-GitLab Runner provides these options:
-1 Default: GitLab Runner reads system certificate store and verifies the GitLab server against the CA's stored in system.
-2 GitLab Runner reads the PEM (DER format is not supported) certificate from predefined file:
-3 GitLab Runner exposes tls-ca-file option during registration and in config.toml which allows you to specify custom file with certificates. This file will be read every time when runner tries to access the GitLab server.
-https://docs.gitlab.com/runner/configuration/advanced-configuration.html
+8. 备份和恢复 Omnibus GitLab 配置
+   /// 设置数据备份路径
 
-修改默认端口
-gitlab.rb 修改
-配置文件在 /opt/gitlab/etc/gitlab.rb 。这个文件用于 gitlab 如何调用 80 和 8080 的服务等。
+   ```sh
+   vim /etc/gitlab/gitlab.rb
+   ###! Docs: https://docs.gitlab.com/omnibus/settings/backups.html
+   gitlab_rails['manage_backup_path'] = true
+   gitlab_rails['backup_path'] = "/data/gitlab/backups"
+   ```
 
-## Advanced settings
+   /// 备份配置：在 /etc/gitlab/config_backup/ 中创建一个 tar 存档。 目录和备份文件只有 root 才能读取。
+   `sudo gitlab-ctl backup-etc`
 
-unicorn['listen'] = '127.0.0.1'
-unicorn['port'] = 8082
-nginx['listen_addresses'] = ['*']
-nginx['listen_port'] = 82 # override only if you use a reverse proxy: https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/doc/settings/nginx.md#setting-the-nginx-listen-port
-gitlab-rails 修改
-配置文件 /var/opt/gitlab/gitlab-rails/etc/unicorn.rb
+9. Embedded Nginx 配置
+   <https://docs.gitlab.com/omnibus/settings/nginx.html>
 
-# What ports/sockets to listen on, and what options for them.
+   ```sh
+   cd /var/opt/gitlab/nginx/conf
+   vim nginx.conf
+   cd /var/log/gitlab/nginx
+   vim /var/log/gitlab/nginx/error.log
+   ///  Update the SSL Certificates
+   sudo gitlab-ctl hup nginx
+   /// 重启 embedded nginx
+   sudo gitlab-ctl restart nginx
+   sudo gitlab-ctl tail nginx
+   ```
 
-#listen "127.0.0.1:8080", :tcp*nopush => true
-listen "127.0.0.1:8082", :tcp_nopush => true
-listen "/var/opt/gitlab/gitlab-rails/sockets/gitlab.socket", :backlog => 1024
-gitlab nginx 修改
-配置文件 /var/opt/gitlab/nginx/conf/gitlab-http.conf。这个文件是 gitlab 内置的 nginx 的配置文件，里面可以影响到 nginx 真实监听端口号。
-server {
-  listen *:82;
-  server*name gitlab.123.123.cn;
-  server_tokens off; ## Don't show the nginx version number, a security best practice
-修改完成后，重启下，就可以放 82 端口的 gitlab 了。
-gitlab-ctl restart
-OS nginx 修改
-如果还是想从 80 端口访问 gitlab，我们可以用监听在 80 端口的 nginx 做一个反向代理。
-service nginx restart
-后可以正常访问。
-server {
-    listen 80;
-    server_name gitlab.123.123.cn;
-    location / {
-        #rewrite ^(.*) http://127.0.0.1:8082;
-        proxy_pass http://127.0.0.1:8082;
-    }
-}
-giltab-shell 修改
-后来在提交的时候，出现了错误：
+10. 导出 Issue
+   相应 API 接口说明文档网址为： <https://docs.gitlab.com/ce/api/>
 
-找了关于 8080 端口的相关信息，最后发现 配置文件：/var/opt/gitlab/gitlab-shell 修改成：
+   首先要获取 gitlab 里所有 group 的 id
 
-# GitLab user. git by default
+   `curl --header "PRIVATE-TOKEN: spsazQxnWK_H5x4znKU2" https://192.168.97.115/api/v3/groups/`
+     PRIVATE-TOKEN  的值是在 gitlab 里的 <https://192.168.97.115/profile/personal_access_tokens> 页面生成的
+     v3 表示 API 的版本
+     gitlab 返回的数据是 json 格式的字符串，可以用如下方式直接在本地生成一个 json 文件，以方便后续处理：
+   `curl --header "PRIVATE-TOKEN: spsazQxnWK_H5x4znKU2"  https://192.168.97.115/api/v4/groups > /Users/wangkan/Downloads/group.json`
 
-user: git
+   如 project 所属的 group id 为 10，用以下方式可以获得 project 的 id
+   `curl --header "PRIVATE-TOKEN: xxx"   https://192.168.97.115/api/v4/groups/11/projects > /Users/xxx/Downloads/project.json`
+     project.json 中包含此 group 里所有 project 的信息
 
-# Url to gitlab instance. Used for api calls. Should end with a slash.
+   如 project 的 id 是 100，用以下方式可以获得 project 的 issue
+   `curl --header "PRIVATE-TOKEN: xxx" https://192.168.97.115/api/v4/projects/59/issues >/Users/ruwang/Downloads/issue.json`
+   gitlab 默认服务器端每次只返回 20 条数据给客户端，可以用设置 page 和 per_page 参数的值，指定服务器端返回的数据个数。
+   `curl --header "PRIVATE-TOKEN: xxx" https://192.168.97.115/api/v4/projects/59/issues?per_page=500&page=1 >/Users/ruwang/Downloads/issue.json`
+   执行上述代码，服务器端会返回 50 条数据，且是在服务器端对数据进行分页处理后，第二页的 50 条数据。
 
-# gitlab_url: " http://127.0.0.1:8080"
+   把 issue.json 文件上传到：<https://json-csv.com/>，就会自动生成excel文件，然后可以下载到本机。
 
-gitlab_url: " http://127.0.0.1:82" ## 关键是这个地方，因为 82 是 gitlab nginx 端口，不过上面的端口干嘛是 8080 来，8080 应该是 unicorn 的监听端口。
-http_settings:
-修改成 8082 端口也可以。
-
-配置 SSH
-https://docs.gitlab.com/ee/ssh/
-/// 生成 rsa 证书
-% cd /Users/wangkan/.ssh
-% vim config
-
-# gitlab
-
-Host 192.168.97.115
-    HostName 192.168.97.115
-    PreferredAuthentications publickey
-    IdentityFile ~/.ssh/gitlab_wangkan
-/// 测试链接
-ssh -T git@192.168.97.115
-
-
-
-Delete an issue
-Only for admins and project owners. Soft deletes the issue in question.
-
-Forbidden Error
-https://docs.gitlab.com/ce/security/rack_attack.html
-通过 Redis 从 Rack Attack 中删除阻止的 IP。
-如果您想要删除阻止的 IP，请按照下列步骤操作：
-查找生产日志（production log）中被阻止的 IP：
-grep "Rack*Attack" /var/log/gitlab/gitlab-rails/production.log
-由于黑名单存储在 Redis 中，因此您需要打开 redis-cli：
-/opt/gitlab/embedded/bin/redis-cli -s /var/opt/gitlab/redis/redis.socket
-您可以使用以下语法删除该块，并用被列入黑名单的实际 IP 替换<ip>：
-del cache:gitlab:rack::attack:allow2ban:ban:<ip>
-确认具有 IP 的密钥不再显示：
-keys \_rack::attack*
-或者，将 IP 添加到白名单以防止它再次被列入黑名单：
-Omnibus GitLab
-用你的编辑器打开/etc/gitlab/gitlab.rb
-添加以下内容：
-gitlab_rails ['rack_attack_git_basic_auth'] = {
-   'enabled'=> true，
-   'ip_whitelist'=> [“127.0.0.1”]，
-   'maxretry'=> 10，
-   'findtime'=> 60，
-   'bantime'=> 3600
-}
-重新配置 GitLab
-]# sudo gitlab-ctl reconfigure
-可以配置以下设置：
-启用：默认情况下，它设置为 true。 将其设置为 false 以禁用 Rack Attack。
-ip_whitelist：白名单 IP 被阻止。 它们必须格式化为 ruby 数组中的字符串。 例如，[“127.0.0.1”，“127.0.0.2”，“127.0.0.3”]。
-maxretry：指定时间内请求的最大次数。
-findtime：失败请求的最大时间量可以在 IP 列入黑名单之前对其进行计数。
-bantime：黑名单 IP 在几秒钟内被阻止的总时间。
-被阻止的 IP 在删除后，仍不能通过 Https 访问。
-
-设置邮箱提醒 Notifications
-找到 User 中的 Profile Settings，在任务栏里再点击 Notifications。
-在 Notifications 页面，如下图：
-① 红色的框内可以输入接收提醒的邮箱；
-② 绿色的框内可以设置接收提醒的级别；
-Disableed:无法获得提醒；
-On Mention:仅仅收到你提到的评论消息；
-Participation:你将收到和你有关的资源（比如：你的 commits 或者指定的版本发布说明，更新了什么功能，修改了什么 bug 等）活动；
-Watch:你将收到活动的提醒；
-Global:全局的任何提示；
-③ 黄色框内可以查看 Groups 和 Projects 的提醒级别；
-注意点：
-有可能你设置完邮箱提示后，邮箱无法收到邮件。这时候你就需要在你的邮箱的垃圾邮件里查看一下，是不是有 Giglab 发来的邮件，如果有你需要把它设置成白名单。
-详见： https://docs.gitlab.com/ee/workflow/notifications.html#doc-nav
-
-备份和恢复 Omnibus GitLab 配置
-/// 设置数据备份路径
-]#  vim /etc/gitlab/gitlab.rb
-###! Docs: https://docs.gitlab.com/omnibus/settings/backups.html
-gitlab_rails['manage_backup_path'] = true
-gitlab_rails['backup_path'] = "/data/gitlab/backups"
-/// 备份配置：在 /etc/gitlab/config_backup/ 中创建一个 tar 存档。 目录和备份文件只有 root 才能读取。
-]# sudo gitlab-ctl backup-etc
-
-Update In CentOS7
-/// 运行备份
-]# sudo gitlab-backup create
-// 不压缩备份：sudo gitlab-backup create STRATEGY=copy
-/// 备份文件存放在['backup_path'] = "/data/gitlab/backups"
-/// scp root@192.168.97.115://data/gitlab/backups/1667540632_2022_11_04_14.0.12_gitlab_backup.tar 1667540632_2022_11_04_14.0.12_gitlab_backup.tar
-/// 查看版本
-]# sudo rpm -q gitlab-ce
-// 确认升级路径： https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/
-/// 在升级前所有监控>后台迁移（Background Migrations）迁移都必须处于“完成”状态
-/// 离线更新
-/// 下载地址   https://packages.gitlab.com/gitlab/gitlab-ce 
-]# rpm -Uvh gitlab-ee-<version>.rpm
-/// 在线更新到最新版本
-]# yum list | grep gitlab
-]# yum --showduplicates list gitlab-ce
-]# sudo yum install gitlab-ce
-]# sudo EXTERNAL_URL=" https://gitlab.example.com" yum install -y gitlab-ce
-/// 在线更新到指定版本
-]# sudo yum install gitlab-ce-14.3.6-ce.0.el7
-]# sudo yum install -y gitlab-ce-14.3.6
-]# sudo yum install gitlab-ce-<version>
-]# gitlab-psql -V
-psql (PostgreSQL) 12.7
-/opt/gitlab/var/unicorn/puma.pid
-['log_directory'] = "/var/log/gitlab/unicorn"
-
-Downgrade and Restore In CentOS7
-// https://docs.gitlab.com/ee/update/package/downgrade.html
-
-# If on Centos: remove the current package
-
-]# sudo yum remove gitlab-ce
-// https://docs.gitlab.com/ee/raketasks/backup_restore.html#restore-for-omnibus-gitlab-installations
-]# sudo gitlab-backup restore BACKUP=1649741711_2022_04_12_14.0.12
-]# sudo gitlab-ctl reconfigure
-]# sudo gitlab-ctl restart
-]# sudo gitlab-rake gitlab:check SANITIZE=true
-
-Upgrade packaged PostgreSQL server
-https://docs.gitlab.com/omnibus/settings/database.html#upgrade-packaged-postgresql-server
-]# sudo du -sh /var/opt/gitlab/postgresql/data
-
-Embedded Nginx 配置
-https://docs.gitlab.com/omnibus/settings/nginx.html
-]# cd /var/opt/gitlab/nginx/conf
-]# vim nginx.conf
-]# cd /var/log/gitlab/nginx
-]# vim /var/log/gitlab/nginx/error.log
-///  Update the SSL Certificates
-]# sudo gitlab-ctl hup nginx
-/// 重启 embedded nginx
-]# sudo gitlab-ctl restart nginx
-$ sudo gitlab-ctl tail nginx
-
-导出 Issue
-相应 API 接口说明文档网址为： https://docs.gitlab.com/ce/api/
-1、首先要获取 gitlab 里所有 group 的 id
-]# curl --header "PRIVATE-TOKEN: spsazQxnWK_H5x4znKU2" https://192.168.97.115/api/v3/groups/
-  PRIVATE-TOKEN  的值是在 gitlab 里的   https://192.168.97.115/profile/personal_access_tokens 页面生成的
-  v3 表示 API 的版本
-  gitlab 返回的数据是 json 格式的字符串，可以用如下方式直接在本地生成一个 json 文件，以方便后续处理：
-]# curl --header "PRIVATE-TOKEN: spsazQxnWK_H5x4znKU2"  https://192.168.97.115/api/v4/groups > /Users/wangkan/Downloads/group.json
-2、如 project 所属的 group id 为 10，用以下方式可以获得 project 的 id
-]# curl --header "PRIVATE-TOKEN: xxx"   https://192.168.97.115/api/v4/groups/11/projects > /Users/xxx/Downloads/project.json
-  project.json 中包含此 group 里所有 project 的信息
-3、如 project 的 id 是 100，用以下方式可以获得 project 的 issue
-]# curl --header "PRIVATE-TOKEN: xxx" https://192.168.97.115/api/v4/projects/59/issues >/Users/ruwang/Downloads/issue.json
-gitlab 默认服务器端每次只返回 20 条数据给客户端，可以用设置 page 和 per_page 参数的值，指定服务器端返回的数据个数。
-]# curl --header "PRIVATE-TOKEN: xxx" https://192.168.97.115/api/v4/projects/59/issues?per_page=500&page=1 >/Users/ruwang/Downloads/issue.json
-执行上述代码，服务器端会返回 50 条数据，且是在服务器端对数据进行分页处理后，第二页的 50 条数据。
-4、把 issue.json 文件上传到： https://json-csv.com/，就会自动生成excel文件，然后可以下载到本机。
-这样就实现了把 gitlab 的 issue 导出到 excel 文件中。
+   导出 Issue.csv 通过 Excel 打开乱码，文件转码 UTF-8 with BOM。
 
 ## bug
 
 ### 附件地址未转为外网地址
 
-https://192.168.97.115/root/ict-program-management-front-end/-/design_management/designs/1/60d36865755a77f874deddccd0bde28c440c7c0d/resized_image/v432x230
-◦ "webUrl": " https://192.168.97.115/root/EN_ManagementPlatform/-/issues/801",
+```json
+"webUrl": "https://192.168.97.115/root/EN_ManagementPlatform/-/issues/801",
 "webPath": "/root/EN_ManagementPlatform/-/issues/801",
+```
+
 查 issue 表中有否 webPath
 
 vim /var/opt/gitlab/nginx/conf/gitlab-http.conf
+
+```conf
 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-# 原配置
-
 proxy_set_header X-Forwarded-For $remote_addr:$remote_port;
 
 # Pass headers because we are serving monitoring endpoints directly without
@@ -535,14 +435,16 @@ proxy_set_header Upgrade $http_upgrade;
 proxy_set_header Connection $connection_upgrade;
 proxy_set_header X-Forwarded-Proto https;
 proxy_set_header X-Forwarded-Ssl on;
+```
 
-导出 Issue.csv 通过 Excel 打开乱码
-文件转码 UTF-8 with BOM
+### ERROR: Registering runner... failed  
 
-ERROR: Registering runner... failed  
-status=couldn't execute POST against https://gitlab.example.com/api/v4/runners: x509: certificate signed by unknown authority
+`status=couldn't execute POST against https://gitlab.example.com/api/v4/runners: x509: certificate signed by unknown authority`
+
 /// gitlab 使用自签名证书时，注册时需要加应用服务证书用于验证
 /// 使用"--tls-ca-file"参数，指定自签名应用证书（server-gitlab.crt）
+
+```txt
 gitlab-runner register \
  --non-interactive \
  --tls-ca-file=/etc/pki/tls/ssl/server-gitlab.crt \
@@ -564,38 +466,38 @@ gitlab-runner register \
  --tag-list "run" \
  --run-untagged \
  --locked="false"
-https://docs.gitlab.com/runner/configuration/tls-self-signed.html#supported-options-for-self-signed-certificates
-status=502 Bad Gateway
-/// 网站给出的 url " https://192.168.97.115" 应改为 url " https://192.168.97.115/"
+```
 
-内外网访问 https://gitLab
-Git clone SSL certificate error
+`status=502 Bad Gateway`
+/// 网站给出的 url `https://192.168.97.115` 应改为 url `https://192.168.97.115/`
 
-# Error: unable to access ' https://192.168.97.115/root/EN_ManagementPlatform.git/': SSL: no alternative certificate subject name matches target host name '192.168.97.115’
+### Git clone SSL certificate error
 
-1.  出现这样的情况是因为 git clone 默认采用 SSL 认证的时候，证书主机名不符，可以通过关掉验证来解决这一问题，就是在 git 命令前面加上：
-env GIT_SSL_NO_VERIFY=true
-所以完整的命令是这样：
-env GIT_SSL_NO_VERIFY=true git clone https://github.com/…
-env GIT_SSL_NO_VERIFY=true git plus … 2.
+`Error: unable to access ' https://192.168.97.115/root/EN_ManagementPlatform.git/': SSL: no alternative certificate subject name matches target host name '192.168.97.115’`
+
+出现这样的情况是因为 git clone 默认采用 SSL 认证的时候，证书主机名不符，可以通过关掉验证来解决这一问题，就是在 git 命令前面加上：env GIT_SSL_NO_VERIFY=true
+所以完整的命令是这样：`env GIT_SSL_NO_VERIFY=true git clone https://github.com/…`
+
 For a single repo
-sudo git config http.sslVerify false
+`sudo git config http.sslVerify false`
+
 For all repo
-sudo git config --global http.sslVerify false
-3.git clone --no-ssl-check https://...
-全局关闭
-wangkandeMac-mini:~ wangkan$ git config --global http.sslVerify false
+`sudo git config --global http.sslVerify false`
 
+git clone --no-ssl-check https://...
 
-搜索两个字的中文没有结果
-前端限制了搜索关键字长度
-sed -i 's/MIN_CHARS_FOR_PARTIAL_MATCHING = 3/MIN_CHARS_FOR_PARTIAL_MATCHING = 2/g' /opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/sql/pattern.rb
-手动修改
-]# vim /opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/sql/pattern.rb
+全局关闭：`git config --global http.sslVerify false`
+
+### 搜索两个字的中文没有结果
+
+前端限制了搜索关键字长度：
+
+`sed -i 's/MIN_CHARS_FOR_PARTIAL_MATCHING = 3/MIN_CHARS_FOR_PARTIAL_MATCHING = 2/g' /opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/sql/pattern.rb`
+
+手动修改：
+
+```sh
+vim /opt/gitlab/embedded/service/gitlab-rails/lib/gitlab/sql/pattern.rb
 MIN_CHARS_FOR_PARTIAL_MATCHING = 3 change to
 MIN_CHARS_FOR_PARTIAL_MATCHING = 2
-
-Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
-sshd_config 中的  PasswordAuthentication 设为  yes，无效。
-git clone git@192.168.97.115:root/Spider_Python.git
-fatal: Could not read from remote repository.
+```
