@@ -79,20 +79,36 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 ## Install In CentOS 7
 
 1. 安装并配置必要的依赖关系  
-   On CentOS 7 (and RedHat/Oracle/Scientific Linux 7), the commands below will also open HTTP and SSH access in the system firewall.
+   在 CentOS 7（以及 RedHat/Oracle/Scientific Linux 7）上，以下命令还将在系统防火墙中开启 HTTP 和 SSH 访问权限。
    sudo yum install -y curl policycoreutils-python openssh-server
    sudo systemctl enable sshd
    sudo systemctl start sshd
    sudo firewall-cmd --permanent --add-service=http
    sudo systemctl reload firewalld
 
-   Next, install Postfix to send notification emails. If you want to use another solution to send emails please skip this step and configure an external SMTP server after GitLab has been installed.
+   接下来，安装 Postfix 以发送通知邮件。如果您希望使用其他方案来发送邮件，请跳过此步骤，并在安装 GitLab 后配置外部 SMTP 服务器。
    sudo yum install postfix
    sudo systemctl enable postfix
    sudo systemctl start postfix
-   During Postfix installation a configuration screen may appear. Select 'Internet Site' and press enter. Use your server's external DNS for 'mail name' and press enter. If additional screens appear, continue to press enter to accept the defaults.
+   在安装 Postfix 过程中可能会出现配置界面。请选择“Internet Site”，然后按回车键。在“mail name”一栏中，输入您的服务器的外部 DNS 名称，然后按回车键。如果后续还有其他配置界面出现，请继续按回车键以接受默认选项。
 
-2. In GreatWall add the GitLab package repository and install the package
+   /// 调整安装目录
+   GitLab 默认将其数据存储在 `/var/opt/gitlab` 目录中。如果您希望将数据存储在其他分区上，可以将该目录移动到新的位置，并创建一个指向它的符号链接。  
+
+   例如，如果您希望将数据存储在 `/data/opt/gitlab` 中，可以按照以下步骤操作：
+
+   ```sh
+   sudo mkdir -p /data/var/opt/gitlab
+   <!-- sudo gitlab-ctl stop -->
+   sudo mv /var/opt/gitlab/* /data/var/opt/gitlab/
+   sudo rm -rf /var/opt/gitlab
+   sudo ln -sf /data/var/opt/gitlab /var/opt/gitlab
+   ```
+
+   > 注意：sudo ln 要在 sudo rm 之后执行，否则无法创建符号链接。
+   > 注意：如果你在安装 GitLab 之前更改了数据目录，请确保在 `/etc/gitlab/gitlab.rb` 中设置了 `git_data_dir` 和其他相关配置。
+
+2. 在 GreatWall 内要添加 GitLab 软件包仓库并安装 GitLab 的步骤如下：
    安装 cent-os 的配置时，可不新建 repo 文件，直接在 CentOS-Base.repo 最后加入文档中描述的内容：
 
    ```txt
@@ -124,21 +140,22 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
    `curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash`
    需要删除  gitlab_gitlab-ce.repo / gitlab_gitlab-ee.repo 否则仍使用海外地址。
 
-   Next, install the GitLab package. Change `http://gitlab.example.com` to the URL at which you want to access your GitLab instance. Installation will automatically configure and start GitLab at that URL. HTTPS requires additional configuration after installation.
-
    接下来，安装 GitLab 软件包。将 <http://gitlab.example.com> 更改为您要访问您的GitLab实例的URL。安装将自动配置并启动该URL的GitLab。HTTPS安装后需要额外的配置。
 
    `sudo EXTERNAL_URL="http://gitlab.example.com"`
    `yum install -y gitlab-ee`
 
-3. Browse to the hostname and login
-   On your first visit, you'll be redirected to a password reset screen. Provide the password for the initial administrator account and you will be redirected back to the login screen. Use the default account's username root to login.
-   See our documentation for detailed instructions on installing and configuration.
+3. 访问主机名并登录  
 
-4. Set up your communication preferences
-   Visit our email subscription preference center to let us know when to communicate with you. We have an explicit email opt-in policy so you have complete control over what and how often we send you emails.
-   Twice a month, we send out the GitLab news you need to know, including new features, integrations, docs, and behind the scenes stories from our dev teams. For critical security updates related to bugs and system performance, sign up for our dedicated security newsletter.
-   IMPORTANT NOTE: If you do not opt-in to the security newsletter, you will not receive security alerts.
+   首次访问时，页面会将你重定向到密码重置界面。请输入初始管理员账户的密码，然后你会被重定向回登录界面。使用默认账户用户名 **root** 进行登录。  
+
+4. 设置您的沟通偏好  
+
+   访问我们的[邮件订阅偏好中心](链接地址)，告知我们何时可以与您联系。我们采用明确的邮件订阅（opt-in）政策，因此您可以完全控制接收哪些邮件以及接收频率。  
+
+   我们每月两次发送 GitLab 重要资讯，包括新功能、集成更新、文档动态，以及开发团队幕后故事等。如需获取有关漏洞和系统性能的**关键安全更新**，请订阅我们的专属安全通讯。  
+
+   **重要提示：** 如果您未订阅安全通讯，将**不会收到安全警报**。
 
 5. Make SSH Key
    `ssh -keygen -t rsa -C "wangkan@eastcom.com" -b 4096`
@@ -178,10 +195,18 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 /// 查看版本
 `sudo rpm -q gitlab-ce`
 // 确认升级路径<https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/>
+15.11.13 => 16.3.9 => 16.7.10 => 16.11.10 => 17.1.8 => 17.3.7 => 17.5.5 => 17.8.7 => 17.11.4 => 18.0.2
 /// 在升级前所有监控>后台迁移（Background Migrations）迁移都必须处于“完成”状态
+
 /// 离线更新
-/// 下载地址<https://packages.gitlab.com/gitlab/gitlab-ce>
-`rpm -Uvh gitlab-ee-<version>.rpm`
+/// 下载地址<https://packages.gitlab.com/gitlab/gitlab-ce>，下载指定版本的 rpm 包
+/// 本地下载后复制到服务器上
+`scp gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm root@192.168.97.115://data/software`
+/// 通过 yum 安装指定版本的 rpm 包
+`cd /data/software`
+`sudo yum install gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm`
+/// 或者使用 rpm 命令安装指定版本的 rpm 包
+`rpm -Uvh gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm`
 
 /// 在线更新到最新版本
 
@@ -189,24 +214,49 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 yum list | grep gitlab
 yum --showduplicates list gitlab-ce
 sudo yum install gitlab-ce
-sudo EXTERNAL_URL=" https://gitlab.example.com" yum install -y gitlab-ce
+sudo EXTERNAL_URL="https://gitlab.example.com" yum install -y gitlab-ce
 ```
 
 /// 在线更新到指定版本
 
 ```sh
-sudo yum install gitlab-ce-14.3.6-ce.0.el7
-sudo yum install -y gitlab-ce-14.3.6
 sudo yum install gitlab-ce-<version>
-gitlab-psql -V
-psql (PostgreSQL) 12.7
+sudo yum install -y gitlab-ce-14.3.6
+
 /opt/gitlab/var/unicorn/puma.pid
 ['log_directory'] = "/var/log/gitlab/unicorn"
 ```
 
+/// gitlab-ce与内置的 PostgreSQL 版本不兼容，需要单独升级 PostgreSQL 版本。
+
+```sh
+gitlab-psql -V
+psql (PostgreSQL) 12.7
+
+gitlab-ctl pg-upgrade
+Checking for an omnibus managed postgresql: OK
+Checking if postgresql['version'] is set: OK
+Checking if we already upgraded: NOT OK
+Checking for a newer version of PostgreSQL to install
+Upgrading PostgreSQL to 13.11
+Checking if disk for directory /data/gitlab/postgresql/data has enough free space for PostgreSQL upgrade: OK
+Checking if PostgreSQL bin files are symlinked to the expected location: OK
+Waiting 30 seconds to ensure tasks complete before PostgreSQL upgrade.
+See https://docs.gitlab.com/omnibus/settings/database.html#upgrade-packaged-postgresql-server for details
+...
+==== Upgrade has completed ====
+Please verify everything is working and run the following if so
+sudo rm -rf /var/opt/gitlab/postgresql/data.12
+sudo rm -f /var/opt/gitlab/postgresql-version.old
+```
+
 /// 离线更新
 
-// <https://docs.gitlab.com/ee/update/package/downgrade.html>
+// <https://packages.gitlab.com/app/gitlab/gitlab-ce>
+
+<https://packages.gitlab.com/gitlab/gitlab-ce/packages/el/7/gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm>
+
+<https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/gitlab-ce-16.7.10-ce.0.el7.x86_64.rpm>
 
 // If on Centos: remove the current package
 
@@ -217,9 +267,6 @@ sudo gitlab-ctl reconfigure
 sudo gitlab-ctl restart
 sudo gitlab-rake gitlab:check SANITIZE=true
 ```
-
-Upgrade packaged PostgreSQL server
-`sudo du -sh /var/opt/gitlab/postgresql/data`
 
 ## 配置
 
@@ -406,6 +453,275 @@ Upgrade packaged PostgreSQL server
    把 issue.json 文件上传到：<https://json-csv.com/>，就会自动生成excel文件，然后可以下载到本机。
 
    导出 Issue.csv 通过 Excel 打开乱码，文件转码 UTF-8 with BOM。
+
+### NGINX 配置设置
+
+要配置不同服务的 NGINX 设置，请编辑 `/etc/gitlab/gitlab.rb` 文件。
+
+你可以使用 `nginx['<setting>']` 来配置 GitLab Rails 应用的 NGINX 设置。GitLab 同样为其他服务提供了类似的配置项，例如：\
+
+- `pages_nginx`
+- `mattermost_nginx`
+- `registry_nginx`
+
+这些服务的 NGINX 配置与 GitLab 主 NGINX 使用相同的默认值。
+
+> 如果你想单独运行某些服务（如 Mattermost），应使用 `gitlab_rails['enable'] = false` 而不是 `nginx['enable'] = false`。更多信息请参阅：[在独立服务器上运行 GitLab Mattermost](https://docs.gitlab.com/ee/administration/mattermost/setup.html)。
+
+当你修改 `gitlab.rb` 文件时，**需要为每个服务单独配置 NGINX 设置**。例如，使用 `nginx['foo']` 设置的参数不会自动复制到 `registry_nginx['foo']` 或 `mattermost_nginx['foo']` 中。
+
+示例：为 GitLab、Mattermost 和 Registry 启用 HTTP 到 HTTPS 重定向：
+
+```ruby
+nginx['redirect_http_to_https'] = true
+registry_nginx['redirect_http_to_https'] = true
+mattermost_nginx['redirect_http_to_https'] = true
+```
+
+1. 启用 HTTPS
+
+   默认情况下，Linux 包安装 **不启用 HTTPS**。要为 `gitlab.example.com` 启用 HTTPS，有以下两种方式：
+
+   1. **使用 Let’s Encrypt 提供免费、自动化的 HTTPS 支持**
+   2. **手动配置 HTTPS 并使用你自己的证书**
+
+   如果你使用了代理、负载均衡器或其他外部设备来终止 SSL，请参考：[外部代理和负载均衡器的 SSL 终止配置](https://docs.gitlab.com/ee/administration/nginx.html#external-proxy-and-load-balancer-ssl-termination)
+
+2. 修改默认的代理请求头（Proxy Headers）
+
+   默认情况下，当你设置了 `external_url`，Linux 包安装会自动配置适合大多数环境的 NGINX 请求头。
+
+   例如，如果你在 `external_url` 中指定了 `https` 协议，系统将自动设置以下请求头：
+
+   ```ruby
+   "X-Forwarded-Proto" => "https",
+   "X-Forwarded-Ssl" => "on"
+   ```
+
+   如果你的 GitLab 实例部署在更复杂的环境中（例如位于反向代理之后），可能需要自定义这些请求头，以避免出现如下错误：
+
+   ```log
+   The change you wanted was rejected
+   Can't verify CSRF token authenticity Completed 422 Unprocessable
+   ```
+
+   要覆盖默认的请求头：
+
+   编辑 `/etc/gitlab/gitlab.rb`：
+
+   ```ruby
+   nginx['proxy_set_headers'] = {
+   "X-Forwarded-Proto" => "http",
+   "CUSTOM_HEADER" => "VALUE"
+   }
+   ```
+
+   保存文件后，重新配置 GitLab 使更改生效：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+   你可以指定任何 NGINX 支持的请求头字段。
+
+3. 配置 GitLab 可信代理和 NGINX 的 real_ip 模块
+
+   默认情况下，**NGINX 和 GitLab 会记录连接客户端的 IP 地址**。
+
+   如果你在 GitLab 前面使用了 **反向代理（reverse proxy）**，你可能不希望显示的是代理服务器的 IP 地址，而是客户端的真实 IP。
+
+   要配置 NGINX 使用客户端真实 IP，请将你的反向代理地址添加到 `real_ip_trusted_addresses` 列表中：
+
+   ```ruby
+   # 每个地址都会被写入 NGINX 配置为：'set_real_ip_from <address>;'
+   # 反向代理地址为：183.247.163.49
+   nginx['real_ip_trusted_addresses'] = [ '192.168.1.0/24', '192.168.2.1', '2001:0db8::/32' ]
+
+   # 其他 real_ip 相关配置选项
+   nginx['real_ip_header'] = 'X-Forwarded-For'
+   nginx['real_ip_recursive'] = 'on'
+   ```
+
+   有关这些配置项的详细说明，请参阅：[NGINX realip 模块文档](http://nginx.org/en/docs/http/ngx_http_realip_module.html)
+
+   默认情况下，Linux 包安装方式会将 `real_ip_trusted_addresses` 中列出的地址作为 GitLab 的 **可信代理（trusted proxies）**。  
+   这样做的目的是防止用户在日志或界面中显示为从这些代理 IP 登录。
+
+   应用更改步骤：
+
+   1. 编辑 `/etc/gitlab/gitlab.rb`
+   2. 添加或修改相关配置项
+   3. 保存文件
+   4. 执行以下命令使配置生效：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+4. 配置 PROXY 协议
+
+   如果你想在 GitLab 前面使用支持 **PROXY 协议** 的代理（如 HAProxy），请按以下步骤配置：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件：
+
+   ```ruby
+   # 启用 NGINX 对 PROXY 协议的支持
+   nginx['proxy_protocol'] = true
+
+   # 配置可信的上游代理地址（启用 proxy_protocol 后此配置为必填）
+   nginx['real_ip_trusted_addresses'] = [ "127.0.0.0/8", "代理服务器的IP地址/32" ]
+   ```
+
+   保存文件后，重新配置 GitLab 以使更改生效：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+   注意事项：
+
+   启用该设置后，NGINX **只会接受符合 PROXY 协议的流量** 进入这些监听端口。  
+   如果你有其他依赖普通 HTTP 请求的环境（例如监控系统、健康检查等），你需要相应地进行调整，以确保它们也能够使用 PROXY 协议或绕过代理直接访问。
+
+5. 设置 NGINX 监听地址
+
+   默认情况下，NGINX 会监听本地所有的 IPv4 地址。
+
+   如果你想更改监听的地址列表：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件：
+
+   ```ruby
+   # 监听所有 IPv4 和 IPv6 地址
+   nginx['listen_addresses'] = ["0.0.0.0", "[::]"]
+   registry_nginx['listen_addresses'] = ['*', '[::]']
+   mattermost_nginx['listen_addresses'] = ['*', '[::]']
+   pages_nginx['listen_addresses'] = ['*', '[::]']
+   ```
+
+   保存文件后，重新配置 GitLab 以使更改生效：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+6. 设置 NGINX 监听端口
+
+   默认情况下，NGINX 会监听你在 `external_url` 中指定的端口，如果没有指定，则使用标准端口（HTTP 使用 80，HTTPS 使用 443）。
+
+   如果你在反向代理后面运行 GitLab，可能需要修改监听端口。
+
+   要更改监听端口：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件。例如，使用端口 `8081`：
+
+   ```ruby
+   nginx['listen_port'] = 8081
+   ```
+
+   保存文件并重新配置 GitLab：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+7. 更改 NGINX 日志的详细级别（日志等级）
+
+   默认情况下，NGINX 的日志等级为 `error` 级别。
+
+   如果你想更改日志等级（例如调试时需要更详细的日志）：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件：
+
+   ```ruby
+   nginx['error_log_level'] = "debug"
+   ```
+
+   保存文件并重新配置 GitLab：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+   > ✅ 支持的日志等级包括：`debug`、`info`、`notice`、`warn`、`error`、`crit`、`alert`、`emerg`  
+   > 更多信息请参考 [NGINX 官方文档](http://nginx.org/en/docs/ngx_core_module.html#LogLevel)
+
+8. 设置 `Referrer-Policy` 请求头
+
+   默认情况下，GitLab 会在所有响应中设置 `Referrer-Policy` 请求头为 `strict-origin-when-cross-origin`。该设置会使客户端：
+
+   - 对**同源请求**发送完整的 URL 作为 referrer。
+   - 对**跨域请求**仅发送源（origin）信息。
+
+   要更改此请求头：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件：
+
+   ```ruby
+   nginx['referrer_policy'] = 'same-origin'
+   ```
+
+   如果你想禁用该请求头，使用浏览器默认行为：
+
+   ```ruby
+   nginx['referrer_policy'] = false
+   ```
+
+   保存文件后，重新配置 GitLab 以使更改生效：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+   > ⚠️ 注意：将 `referrer_policy` 设置为 `origin` 或 `no-referrer` 可能会导致某些需要完整 referrer URL 的 GitLab 功能异常。
+
+   如需了解更多，请参考 [Referrer Policy 规范](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Referrer-Policy)
+
+9. 禁用 Gzip 压缩
+
+   默认情况下，GitLab 会对大于 10240 字节的文本数据启用 Gzip 压缩。如果你希望禁用 Gzip 压缩：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件：
+
+   ```ruby
+   nginx['gzip_enabled'] = false
+   ```
+
+   保存文件并重新配置 GitLab：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+   > ✅ 此设置**仅影响主 GitLab 应用程序**，不影响其他服务（如 Registry、Pages 等）。
+
+10. 禁用代理请求缓冲（Request Buffering）
+
+   对于某些特定路径（如上传大文件或执行 Git 操作），你可能希望**关闭请求缓冲**以提升性能或避免内存问题。
+
+   要禁用特定路径的请求缓冲：
+
+   编辑 `/etc/gitlab/gitlab.rb` 文件：
+
+   ```ruby
+   nginx['request_buffering_off_path_regex'] = "/api/v\\d/jobs/\\d+/artifacts$|/import/gitlab_project$|\\.git/git-receive-pack$|\\.git/ssh-receive-pack$|\\.git/ssh-upload-pack$|\\.git/gitlab-lfs/objects|\\.git/info/lfs/objects/batch$"
+   ```
+
+   保存文件后，重新配置 GitLab：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   ```
+
+   平滑重载 NGINX 配置
+
+   在修改 NGINX 配置后，你可以使用以下命令**平滑重载配置**（不中断现有连接）：
+
+   ```bash
+   sudo gitlab-ctl hup nginx
+   ```
+
+   如需了解 `hup` 命令的更多细节，请参考 [NGINX 官方文档](https://nginx.org/en/docs/control.html)
 
 ## bug
 

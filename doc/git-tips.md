@@ -239,3 +239,38 @@
 ## SVN 2 GIT
 
 <https://blog.51cto.com/u_11566683/6045704>
+
+## 体积过大处理
+
+在 Git 中处理体积过大的仓库，尤其是当你需要删除大文件或清理历史记录时，可以使用 BFG Repo-Cleaner 工具。BFG 是一个快速且易于使用的工具，用于清理 Git 仓库中的大文件和敏感数据。
+BFG Repo-Cleaner 是一个替代 `git filter-branch` 的工具，专门用于清理 Git 仓库。它比 `git filter-branch` 更快、更简单，适合处理大文件和敏感数据的清理。
+BFG 的使用非常简单，以下是一个基本的清理流程：
+
+首先，使用 `--mirror` 参数克隆一份你仓库的新副本：
+
+```bash
+git clone --mirror git://example.com/some-big-repo.git
+```
+
+这是一个**裸仓库（bare repo）**，这意味着你不会看到正常的文件结构，但它完整地复制了你仓库中的所有 Git 数据。在这个阶段，你应该对它做一个备份，以防止数据丢失。
+
+现在你可以运行 BFG 来清理你的仓库了：
+
+```bash
+java -jar bfg.jar --strip-blobs-bigger-than 100M some-big-repo.git
+```
+
+BFG 会更新你的提交记录以及所有分支和标签，使它们变得干净。但请注意，**BFG 并不会物理删除那些不需要的数据**。你需要使用标准的 `git gc` 命令来真正清除这些不再需要的“脏”数据，Git 此时已经把这些数据标记为多余内容：
+
+```bash
+cd some-big-repo.git
+git reflog expire --expire=now --all && git gc --prune=now --aggressive
+```
+
+最后，当你确认仓库已经清理完成并处于你期望的状态后，就可以将它推送到远程仓库（注意：由于你在克隆时使用了 `--mirror` 参数，这个推送操作会更新远程服务器上的所有引用）：
+
+```bash
+git push
+```
+
+至此，你的仓库就已经清理完毕了。现在建议所有团队成员**丢弃他们本地旧的仓库副本**，从新的、干净的仓库重新克隆。最好**彻底删除旧的克隆副本**，因为它们仍然保留着“脏”的历史记录，可能会意外地再次推送到你刚刚清理过的新仓库中。
