@@ -1,5 +1,33 @@
 # 常用git组合操作
 
+## Fork 操作
+
+1. B 首先要 fork 一个。
+   在项目: <https://gitlab.com/A/durit>，单击 fork，然后你（B）的 gitlab 上就出现了一个 fork，位置是： <https://github.com/B/durit>
+2. B 把自己的 fork 克隆到本地。
+   `git clone https://gitlab.com/B/durit`
+3. 现在你是主人，为了保持与 A 的 durit 的联系，你需要给 A 的 durit 起个名，供你来驱使。
+   `cd durit`
+   `git remote add upstream https://gitlab.com/A/durit`
+   (现在改名为 upstream，这名随意，现在你（B）管 A 的 durit 叫 upstream，以后 B 就用 upstream 来和 A 的 durit 联系了)
+4. 获取 A 上的更新(但不会修改你的文件)。
+   `git fetch upstream`
+5. 合并拉取的数据
+   `git merge upstream/master`
+   （又联系了一次，upstream/master，前者是你要合并的数据，后者是你要合并到的数据（在这里就是 B 本地的 durit 了））
+6. 在 B 修改了本地部分内容后，把本地的更改推送到 B 的远程 github 上。
+   git add 修改过的文件
+   git commit -m "注释"
+   git push origin master
+7. 然后 B 还想让修改过的内容也推送到 A 上，这就要发起 pull request 了。
+   打开 B 的 <https://gitlab.com/B/durit>
+   点击 Pull Requests
+   单击 new pull request
+   单击 create pull request
+   输入 title 和你更改的内容
+   然后单击 send pull request
+   这样 B 就完成了工作，然后就等着主人 A 来操作了。
+
 ## fork冲突解决
 
 在 Git 中同步 fork 仓库时，如果出现冲突或提示需要解决冲突的情况，通常是因为你的 fork 仓库与上游（upstream）仓库的代码存在差异。

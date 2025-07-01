@@ -1,23 +1,29 @@
 # GitLab Tips
 
-常用网址
-
-<https://gitlab.com/gitlab-org/gitlab>
-<https://docs.gitlab.com/omnibus/settings/nginx.html#supporting-proxied-ssl>
-<https://docs.gitlab.cn/jh/administration/pages/index.html>
-<https://docs.gitlab.cn/omnibus/settings/ssl/index.html>
-
 ## 常用命令
 
 ```sh
-sudo gitlab-ctl start # 启动所有 gitlab 组件；
-sudo gitlab-ctl stop # 停止所有 gitlab 组件；
-sudo gitlab-ctl restart # 重启所有 gitlab 组件；
-sudo gitlab-ctl status # 查看服务状态；
-sudo gitlab-ctl reconfigure # 启动服务；
-sudo vim /etc/gitlab/gitlab.rb # 修改默认的配置文件；
-gitlab-rake gitlab:check SANITIZE=true --trace # 检查 gitlab；
-gitlab-ctl tail puma
+# 启动所有 gitlab 组件
+sudo gitlab-ctl start
+# 停止所有 gitlab 组件
+sudo gitlab-ctl stop
+# 重启所有 gitlab 组件
+sudo gitlab-ctl restart
+# 查看服务状态
+sudo gitlab-ctl status
+# 配置服务
+sudo gitlab-ctl reconfigure
+# 修改默认的配置文件
+sudo vim /etc/gitlab/gitlab.rb
+# 检查服务
+gitlab-rake gitlab:check SANITIZE=true --trace
+# 查看操作日志
+sudo gitlab-ctl tail
+# 查看 puma 操作日志
+sudo gitlab-ctl tail puma
+# 以 ssh 或 easymail.eastcom.com 过滤
+sudo gitlab-ctl tail | grep ssh
+sudo gitlab-ctl tail | grep easymail.eastcom.com
 ```
 
 ```sh
@@ -25,14 +31,6 @@ sudo gitlab-ctl pg-password-md5 gitlab
 Enter password: 52230401
 Confirm password:
 2575508f0a158a23baa031363b17ac48
-```
-
-```sh
-# CentOS 查看 gitlab 操作日志
-sudo gitlab-ctl tail
-# 以 ssh 或 easymail.eastcom.com 过滤
-sudo gitlab-ctl tail | grep ssh
-sudo gitlab-ctl tail | grep easymail.eastcom.com
 ```
 
 ```sh
@@ -48,227 +46,7 @@ su - gitlab-psql
 psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 ```
 
-## Fork 操作
-
-1. B 首先要 fork 一个。
-   在项目: <https://gitlab.com/A/durit>，单击 fork，然后你（B）的 gitlab 上就出现了一个 fork，位置是： <https://github.com/B/durit>
-2. B 把自己的 fork 克隆到本地。
-   `git clone https://gitlab.com/B/durit`
-3. 现在你是主人，为了保持与 A 的 durit 的联系，你需要给 A 的 durit 起个名，供你来驱使。
-   `cd durit`
-   `git remote add upstream https://gitlab.com/A/durit`
-   (现在改名为 upstream，这名随意，现在你（B）管 A 的 durit 叫 upstream，以后 B 就用 upstream 来和 A 的 durit 联系了)
-4. 获取 A 上的更新(但不会修改你的文件)。
-   `git fetch upstream`
-5. 合并拉取的数据
-   `git merge upstream/master`
-   （又联系了一次，upstream/master，前者是你要合并的数据，后者是你要合并到的数据（在这里就是 B 本地的 durit 了））
-6. 在 B 修改了本地部分内容后，把本地的更改推送到 B 的远程 github 上。
-   git add 修改过的文件
-   git commit -m "注释"
-   git push origin master
-7. 然后 B 还想让修改过的内容也推送到 A 上，这就要发起 pull request 了。
-   打开 B 的 <https://gitlab.com/B/durit>
-   点击 Pull Requests
-   单击 new pull request
-   单击 create pull request
-   输入 title 和你更改的内容
-   然后单击 send pull request
-   这样 B 就完成了工作，然后就等着主人 A 来操作了。
-
-## Install In CentOS 7
-
-1. 安装并配置必要的依赖关系  
-   在 CentOS 7（以及 RedHat/Oracle/Scientific Linux 7）上，以下命令还将在系统防火墙中开启 HTTP 和 SSH 访问权限。
-   sudo yum install -y curl policycoreutils-python openssh-server
-   sudo systemctl enable sshd
-   sudo systemctl start sshd
-   sudo firewall-cmd --permanent --add-service=http
-   sudo systemctl reload firewalld
-
-   接下来，安装 Postfix 以发送通知邮件。如果您希望使用其他方案来发送邮件，请跳过此步骤，并在安装 GitLab 后配置外部 SMTP 服务器。
-   sudo yum install postfix
-   sudo systemctl enable postfix
-   sudo systemctl start postfix
-   在安装 Postfix 过程中可能会出现配置界面。请选择“Internet Site”，然后按回车键。在“mail name”一栏中，输入您的服务器的外部 DNS 名称，然后按回车键。如果后续还有其他配置界面出现，请继续按回车键以接受默认选项。
-
-   /// 调整安装目录
-   GitLab 默认将其数据存储在 `/var/opt/gitlab` 目录中。如果您希望将数据存储在其他分区上，可以将该目录移动到新的位置，并创建一个指向它的符号链接。  
-
-   例如，如果您希望将数据存储在 `/data/opt/gitlab` 中，可以按照以下步骤操作：
-
-   ```sh
-   sudo mkdir -p /data/var/opt/gitlab
-   <!-- sudo gitlab-ctl stop -->
-   sudo mv /var/opt/gitlab/* /data/var/opt/gitlab/
-   sudo rm -rf /var/opt/gitlab
-   sudo ln -sf /data/var/opt/gitlab /var/opt/gitlab
-   ```
-
-   > 注意：sudo ln 要在 sudo rm 之后执行，否则无法创建符号链接。
-   > 注意：如果你在安装 GitLab 之前更改了数据目录，请确保在 `/etc/gitlab/gitlab.rb` 中设置了 `git_data_dir` 和其他相关配置。
-
-2. 在 GreatWall 内要添加 GitLab 软件包仓库并安装 GitLab 的步骤如下：
-   安装 cent-os 的配置时，可不新建 repo 文件，直接在 CentOS-Base.repo 最后加入文档中描述的内容：
-
-   ```txt
-   [gitlab-ce]
-   name=Gitlab CE Repository
-   baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el$releasever/
-   gpgcheck=0
-   enabled=1
-
-   [root@localhost ~]# cat << EOF > /etc/yum.repos.d/gitlab-ce.repo
-
-   > [gitlab-ce]
-   > name=gitlab-ce
-   > baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/
-   > repo_gpgcheck=0
-   > gpgcheck=0
-   > enable=1
-   > gpgkey= https://packages.gitlab.com/gpg.key
-   > EOF
-   ```
-
-   后保存并运行：
-   yum clean all
-   yum makecache
-   yum update
-   yum install gitlab-ce
-
-   注意：若已经运行过 Add the GitLab package repository 命令
-   `curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash`
-   需要删除  gitlab_gitlab-ce.repo / gitlab_gitlab-ee.repo 否则仍使用海外地址。
-
-   接下来，安装 GitLab 软件包。将 <http://gitlab.example.com> 更改为您要访问您的GitLab实例的URL。安装将自动配置并启动该URL的GitLab。HTTPS安装后需要额外的配置。
-
-   `sudo EXTERNAL_URL="http://gitlab.example.com"`
-   `yum install -y gitlab-ee`
-
-3. 访问主机名并登录  
-
-   首次访问时，页面会将你重定向到密码重置界面。请输入初始管理员账户的密码，然后你会被重定向回登录界面。使用默认账户用户名 **root** 进行登录。  
-
-4. 设置您的沟通偏好  
-
-   访问我们的[邮件订阅偏好中心](链接地址)，告知我们何时可以与您联系。我们采用明确的邮件订阅（opt-in）政策，因此您可以完全控制接收哪些邮件以及接收频率。  
-
-   我们每月两次发送 GitLab 重要资讯，包括新功能、集成更新、文档动态，以及开发团队幕后故事等。如需获取有关漏洞和系统性能的**关键安全更新**，请订阅我们的专属安全通讯。  
-
-   **重要提示：** 如果您未订阅安全通讯，将**不会收到安全警报**。
-
-5. Make SSH Key
-   `ssh -keygen -t rsa -C "wangkan@eastcom.com" -b 4096`
-   pbcopy < /Users/wangkan/.ssh/id_gitlab_rsa.pub
-   Note：Enter passphrase (empty for no passphrase) :时，可以直接按两次回车键输入一个空的 passphrase；也可以选择输入一个 passphrase 口令，如果此时你输入了一个 passphrase，请牢记，之后每次提交时都需要输入这个口令来确认。
-   实践过程中 Android studio 如果有密码无法同步，建议不要密码。
-   获取 SSH 公钥信息：
-   SSH 密钥生成结束后，根据提示信息找到 SSH 目录，会看到私钥 id_rsa 和公钥 id_rsa.pub 这两个文件，不要把私钥文件 id_rsa 的信息透露给任何人。我们可以通过 cat 命令或文本编辑器来查看 id_rsa.pub 公钥信息。
-   （1）通过文本编辑器，如 Sublime Text 等软件打开 id_rsa.pub，复制里面的所有内容以备下一步使用。
-   （2）通过 cat 命令。在命令行中敲入 cat id_rsa.pub，回车执行后命令行界面中会显示 id_rsa.pub 文件里的内容，复制后在下一步使用。
-   （3）通过直接使用命令将 id_rsa.pub 文件里的内容复制到剪切板中
-   Windows: clip < ~/.ssh/id_rsa.pub
-   Mac: pbcopy < ~/.ssh/id_rsa.pub
-   GNU/Linux (requires xclip): xclip -sel clip < ~/.ssh/id_rsa.pub
-
-6. Mac 要自己配置 config 来添加自定义的 SSH 私钥
-
-   github
-
-   Host github.com
-   HostName github.com
-   PreferredAuthentications publickey
-   IdentityFile ~/.ssh/id_rsa_github //github 对应的私钥
-
-   wangkan$ cd /etc/ssh/
-   ssh wangkan$ ls ssh_config sshd_config
-   ssh wangkan$ vim ssh_config
-   ssh wangkan$ vim sshd_config
-
-## Update In CentOS7
-
-/// 运行备份
-`sudo gitlab-backup create`
-// 不压缩备份：`sudo gitlab-backup create STRATEGY=copy`
-/// 备份文件存放路径：`['backup_path'] = "/data/gitlab/backups"`
-/// 异地备份：`scp root@192.168.97.115://data/gitlab/backups/1667540632_2022_11_04_14.0.12_gitlab_backup.tar 1667540632_2022_11_04_14.0.12_gitlab_backup.tar`
-/// 查看版本
-`sudo rpm -q gitlab-ce`
-// 确认升级路径<https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/>
-15.11.13 => 16.3.9 => 16.7.10 => 16.11.10 => 17.1.8 => 17.3.7 => 17.5.5 => 17.8.7 => 17.11.4 => 18.0.2
-/// 在升级前所有监控>后台迁移（Background Migrations）迁移都必须处于“完成”状态
-
-/// 离线更新
-/// 下载地址<https://packages.gitlab.com/gitlab/gitlab-ce>，下载指定版本的 rpm 包
-/// 本地下载后复制到服务器上
-`scp gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm root@192.168.97.115://data/software`
-/// 通过 yum 安装指定版本的 rpm 包
-`cd /data/software`
-`sudo yum install gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm`
-/// 或者使用 rpm 命令安装指定版本的 rpm 包
-`rpm -Uvh gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm`
-
-/// 在线更新到最新版本
-
-```sh
-yum list | grep gitlab
-yum --showduplicates list gitlab-ce
-sudo yum install gitlab-ce
-sudo EXTERNAL_URL="https://gitlab.example.com" yum install -y gitlab-ce
-```
-
-/// 在线更新到指定版本
-
-```sh
-sudo yum install gitlab-ce-<version>
-sudo yum install -y gitlab-ce-14.3.6
-
-/opt/gitlab/var/unicorn/puma.pid
-['log_directory'] = "/var/log/gitlab/unicorn"
-```
-
-/// gitlab-ce与内置的 PostgreSQL 版本不兼容，需要单独升级 PostgreSQL 版本。
-
-```sh
-gitlab-psql -V
-psql (PostgreSQL) 12.7
-
-gitlab-ctl pg-upgrade
-Checking for an omnibus managed postgresql: OK
-Checking if postgresql['version'] is set: OK
-Checking if we already upgraded: NOT OK
-Checking for a newer version of PostgreSQL to install
-Upgrading PostgreSQL to 13.11
-Checking if disk for directory /data/gitlab/postgresql/data has enough free space for PostgreSQL upgrade: OK
-Checking if PostgreSQL bin files are symlinked to the expected location: OK
-Waiting 30 seconds to ensure tasks complete before PostgreSQL upgrade.
-See https://docs.gitlab.com/omnibus/settings/database.html#upgrade-packaged-postgresql-server for details
-...
-==== Upgrade has completed ====
-Please verify everything is working and run the following if so
-sudo rm -rf /var/opt/gitlab/postgresql/data.12
-sudo rm -f /var/opt/gitlab/postgresql-version.old
-```
-
-/// 离线更新
-
-// <https://packages.gitlab.com/app/gitlab/gitlab-ce>
-
-<https://packages.gitlab.com/gitlab/gitlab-ce/packages/el/7/gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm>
-
-<https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/gitlab-ce-16.7.10-ce.0.el7.x86_64.rpm>
-
-// If on Centos: remove the current package
-
-```sh
-sudo yum remove gitlab-ce
-sudo gitlab-backup restore BACKUP=1649741711_2022_04_12_14.0.12
-sudo gitlab-ctl reconfigure
-sudo gitlab-ctl restart
-sudo gitlab-rake gitlab:check SANITIZE=true
-```
-
-## 配置
+## 常用配置
 
 /// 开机启动
 `systemctl enable gitlab-runsvdir.service`
@@ -276,30 +54,30 @@ sudo gitlab-rake gitlab:check SANITIZE=true
 `systemctl disable gitlab-runsvdir.service`
 
 1. 启用 HTTPS
-   /// 默认情况下，omnibus-gitlab 不使用 HTTPS。如果要为 gitlib.eastcomccmp.top.启用 HTTPS，请将以下语句添加到/etc/gitlab/gitlab.rb：
-   `sudo vim /etc/gitlab/gitlab.rb`
+    /// 默认情况下，omnibus-gitlab 不使用 HTTPS。
+    `sudo vim /etc/gitlab/gitlab.rb`
 
-   ```rb
-       # 启用 https
-       external_url ' https://gitlib.eastcomccmp.top.'
-       ## 配置 nginx
-       nginx['enable'] = true
-       nginx['redirect_http_to_https'] = true
-       nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.crt"
-       nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.key"
-   ```
+    ```rb
+    # 启用 https
+    external_url 'https://gitlib.eastcomccmp.top'
+    # 配置 nginx
+    nginx['enable'] = true
+    nginx['redirect_http_to_https'] = true
+    nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.crt"
+    nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.key"
+    ```
 
-   /// 创建/etc/gitlab/ssl 目录并在那里复制您的密钥 gitlib.eastcomccmp.top.key 和证书 gitlib.eastcomccmp.top.crt。
-   `sudo mkdir -p /etc/gitlab/ssl`
-   `sudo chmod 755 /etc/gitlab/ssl`
-   `sudo cp gitlib.key gitlib.pem /etc/gitlab/ssl/`
-   /// 远程 Copy:
-   `scp gitlib.key gitlib.pem root@192.168.97.115://etc/gitlab/ssl`
-   /// 运行重新配置命令
-   `sudo gitlab-ctl reconfigure`
-   /// GitLab 实例应该可以访问 <https://gitlib.eastcomccmp.top。>
-   `sudo vim /var/opt/gitlab/gitlab-rails/etc/gitlab.yml`
-   `sudo vim /var/opt/gitlab/nginx/conf/gitlab-http.conf`
+    /// 创建/etc/gitlab/ssl 目录并在那里复制您的密钥 gitlib.eastcomccmp.top.key 和证书 gitlib.eastcomccmp.top.crt。
+    `sudo mkdir -p /etc/gitlab/ssl`
+    `sudo chmod 755 /etc/gitlab/ssl`
+    `sudo cp gitlib.key gitlib.pem /etc/gitlab/ssl/`
+    /// 远程 Copy
+    `scp gitlib.key gitlib.pem root@192.168.97.115://etc/gitlab/ssl`
+    /// 运行重新配置命令
+    `sudo gitlab-ctl reconfigure`
+    /// GitLab 实例应该可以访问 <https://gitlib.eastcomccmp.top>
+    `sudo vim /var/opt/gitlab/gitlab-rails/etc/gitlab.yml`
+    `sudo vim /var/opt/gitlab/nginx/conf/gitlab-http.conf`
 
 2. Embedded Nginx
    /// 用 ps 命令查看路径：
@@ -401,20 +179,7 @@ sudo gitlab-rake gitlab:check SANITIZE=true
 
    重启服务：`sudo gitlab-ctl reconfigure`
 
-8. 备份和恢复 Omnibus GitLab 配置
-   /// 设置数据备份路径
-
-   ```sh
-   vim /etc/gitlab/gitlab.rb
-   ###! Docs: https://docs.gitlab.com/omnibus/settings/backups.html
-   gitlab_rails['manage_backup_path'] = true
-   gitlab_rails['backup_path'] = "/data/gitlab/backups"
-   ```
-
-   /// 备份配置：在 /etc/gitlab/config_backup/ 中创建一个 tar 存档。 目录和备份文件只有 root 才能读取。
-   `sudo gitlab-ctl backup-etc`
-
-9. Embedded Nginx 配置
+8. Embedded Nginx 配置
    <https://docs.gitlab.com/omnibus/settings/nginx.html>
 
    ```sh
@@ -429,7 +194,7 @@ sudo gitlab-rake gitlab:check SANITIZE=true
    sudo gitlab-ctl tail nginx
    ```
 
-10. 导出 Issue
+9. 导出 Issue
    相应 API 接口说明文档网址为： <https://docs.gitlab.com/ce/api/>
 
    首先要获取 gitlab 里所有 group 的 id
@@ -450,7 +215,7 @@ sudo gitlab-rake gitlab:check SANITIZE=true
    `curl --header "PRIVATE-TOKEN: xxx" https://192.168.97.115/api/v4/projects/59/issues?per_page=500&page=1 >/Users/ruwang/Downloads/issue.json`
    执行上述代码，服务器端会返回 50 条数据，且是在服务器端对数据进行分页处理后，第二页的 50 条数据。
 
-   把 issue.json 文件上传到：<https://json-csv.com/>，就会自动生成excel文件，然后可以下载到本机。
+   把 issue.json 文件上传到：<https://json-csv.com/>，就会自动生成 excel 文件，然后可以下载到本机。
 
    导出 Issue.csv 通过 Excel 打开乱码，文件转码 UTF-8 with BOM。
 
@@ -697,31 +462,475 @@ mattermost_nginx['redirect_http_to_https'] = true
 
 10. 禁用代理请求缓冲（Request Buffering）
 
-   对于某些特定路径（如上传大文件或执行 Git 操作），你可能希望**关闭请求缓冲**以提升性能或避免内存问题。
+对于某些特定路径（如上传大文件或执行 Git 操作），你可能希望**关闭请求缓冲**以提升性能或避免内存问题。
 
-   要禁用特定路径的请求缓冲：
+要禁用特定路径的请求缓冲：
 
-   编辑 `/etc/gitlab/gitlab.rb` 文件：
+编辑 `/etc/gitlab/gitlab.rb` 文件：
 
-   ```ruby
-   nginx['request_buffering_off_path_regex'] = "/api/v\\d/jobs/\\d+/artifacts$|/import/gitlab_project$|\\.git/git-receive-pack$|\\.git/ssh-receive-pack$|\\.git/ssh-upload-pack$|\\.git/gitlab-lfs/objects|\\.git/info/lfs/objects/batch$"
+```ruby
+nginx['request_buffering_off_path_regex'] = "/api/v\\d/jobs/\\d+/artifacts$|/import/gitlab_project$|\\.git/git-receive-pack$|\\.git/ssh-receive-pack$|\\.git/ssh-upload-pack$|\\.git/gitlab-lfs/objects|\\.git/info/lfs/objects/batch$"
+```
+
+保存文件后，重新配置 GitLab：
+
+```bash
+sudo gitlab-ctl reconfigure
+```
+
+平滑重载 NGINX 配置
+
+在修改 NGINX 配置后，你可以使用以下命令**平滑重载配置**（不中断现有连接）：
+
+```bash
+sudo gitlab-ctl hup nginx
+```
+
+如需了解 `hup` 命令的更多细节，请参考 [NGINX 官方文档](https://nginx.org/en/docs/control.html)
+
+## 常用操作
+
+### 安装
+
+在 CentOS 7（以及 RedHat/Oracle/Scientific Linux 7）上
+
+1. 安装并配置必要的依赖关系  
+
+    ```sh
+    # 安装依赖
+    sudo yum install -y curl policycoreutils-python openssh-server
+    # 开启 SSH 访问权限
+    sudo systemctl enable sshd
+    sudo systemctl start sshd
+    # 开启 HTTP 访问权限
+    sudo firewall-cmd --permanent --add-service=http
+    sudo systemctl reload firewalld
+    ```
+
+    接下来，安装 Postfix 以发送通知邮件。如果您希望使用其他方案来发送邮件，请跳过此步骤，并在安装 GitLab 后配置外部 SMTP 服务器。
+
+    ```sh
+    sudo yum install postfix
+    sudo systemctl enable postfix
+    sudo systemctl start postfix
+    ```
+
+    在安装 Postfix 过程中可能会出现配置界面。请选择“Internet Site”，然后按回车键。在“mail name”一栏中，输入您的服务器的外部 DNS 名称，然后按回车键。如果后续还有其他配置界面出现，请继续按回车键以接受默认选项。
+
+    /// 调整安装目录
+    GitLab 默认将其数据存储在 `/var/opt/gitlab` 目录中。如果您希望将数据存储在其他分区上，可以将该目录移动到新的位置，并创建一个指向它的符号链接。
+
+    例如，如果您希望将数据存储在 `/data/opt/gitlab` 中，可以按照以下步骤操作：
+
+    ```sh
+    sudo mkdir -p /data/var/opt/gitlab
+    <!-- sudo gitlab-ctl stop -->
+    sudo mv /var/opt/gitlab/* /data/var/opt/gitlab/
+    sudo rm -rf /var/opt/gitlab
+    sudo ln -sf /data/var/opt/gitlab /var/opt/gitlab
+    ```
+
+    > 注意：sudo ln 要在 sudo rm 之后执行，否则无法创建符号链接。
+    > 注意：如果你在安装 GitLab 之前更改了数据目录，请确保在 `/etc/gitlab/gitlab.rb` 中设置了 `git_data_dir` 和其他相关配置。
+
+2. 在 GreatWall 内要添加 GitLab 软件包仓库并安装 GitLab 的步骤如下：
+
+    安装 cent-os 的配置时，可不新建 repo 文件，直接在 CentOS-Base.repo 最后加入文档中描述的内容：
+
+    ```txt
+    [gitlab-ce]
+    name=Gitlab CE Repository
+    baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el$releasever/
+    gpgcheck=0
+    enabled=1
+
+    [root@localhost ~]# cat << EOF > /etc/yum.repos.d/gitlab-ce.repo
+
+    > [gitlab-ce]
+    > name=gitlab-ce
+    > baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/
+    > repo_gpgcheck=0
+    > gpgcheck=0
+    > enable=1
+    > gpgkey= https://packages.gitlab.com/gpg.key
+    > EOF
+    ```
+
+    后保存并运行：
+    yum clean all
+    yum makecache
+    yum update
+    yum install gitlab-ce
+
+    注意：若已经运行过 Add the GitLab package repository 命令
+    `curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash`
+    需要删除  gitlab_gitlab-ce.repo / gitlab_gitlab-ee.repo 否则仍使用海外地址。
+
+    接下来，安装 GitLab 软件包。将 <http://gitlab.example.com> 更改为您要访问您的 GitLab 实例的 URL。安装将自动配置并启动该 URL 的 GitLab。HTTPS 安装后需要额外的配置。
+
+    `sudo EXTERNAL_URL="http://gitlab.example.com"`
+    `yum install -y gitlab-ce`
+
+3. 访问主机名并登录
+
+    首次访问时，页面会将你重定向到密码重置界面。请输入初始管理员账户的密码，然后你会被重定向回登录界面。使用默认账户用户名 **root** 进行登录。
+
+4. 设置您的沟通偏好
+
+    如需获取有关漏洞和系统性能的**关键安全更新**，请访问我们的邮件订阅偏好中心订阅我们的专属安全通讯。
+
+    **重要提示：** 如果您未订阅安全通讯，将**不会收到安全警报**。
+
+5. Make SSH Key
+    `ssh -keygen -t rsa -C "wangkan@eastcom.com" -b 4096`
+    pbcopy < /Users/wangkan/.ssh/id_gitlab_rsa.pub
+    Note：Enter passphrase (empty for no passphrase) :时，可以直接按两次回车键输入一个空的 passphrase；也可以选择输入一个 passphrase 口令，如果此时你输入了一个 passphrase，请牢记，之后每次提交时都需要输入这个口令来确认。
+    实践过程中 Android studio 如果有密码无法同步，建议不要密码。
+    获取 SSH 公钥信息：
+    SSH 密钥生成结束后，根据提示信息找到 SSH 目录，会看到私钥 id_rsa 和公钥 id_rsa.pub 这两个文件，不要把私钥文件 id_rsa 的信息透露给任何人。我们可以通过 cat 命令或文本编辑器来查看 id_rsa.pub 公钥信息。
+    （1）通过文本编辑器，如 Sublime Text 等软件打开 id_rsa.pub，复制里面的所有内容以备下一步使用。
+    （2）通过 cat 命令。在命令行中敲入 cat id_rsa.pub，回车执行后命令行界面中会显示 id_rsa.pub 文件里的内容，复制后在下一步使用。
+    （3）通过直接使用命令将 id_rsa.pub 文件里的内容复制到剪切板中
+    Windows: clip < ~/.ssh/id_rsa.pub
+    Mac: pbcopy < ~/.ssh/id_rsa.pub
+    GNU/Linux (requires xclip): xclip -sel clip < ~/.ssh/id_rsa.pub
+
+6. Mac 要自己配置 config 来添加自定义的 SSH 私钥
+
+    github
+
+    Host github.com
+    HostName github.com
+    PreferredAuthentications publickey
+    IdentityFile ~/.ssh/id_rsa_github //github 对应的私钥
+
+    wangkan$ cd /etc/ssh/
+    ssh wangkan$ ls ssh_config sshd_config
+    ssh wangkan$ vim ssh_config
+    ssh wangkan$ vim sshd_config
+
+### 升级
+
+/// 查看版本
+`sudo rpm -q gitlab-ce`
+// 确认升级路径<https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/>
+15.11.13 => 16.3.9 => 16.7.10 => 16.11.10 => 17.1.8 => 17.3.7 => 17.5.5 => 17.8.7 => 17.11.4 => 18.0.2
+/// 在升级前所有监控>后台迁移（Background Migrations）迁移都必须处于“完成”状态
+
+/// 离线更新
+/// 下载地址<https://packages.gitlab.com/gitlab/gitlab-ce>，下载指定版本的 rpm 包
+
+```bash
+# 本地下载后复制到服务器上
+scp gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm root@192.168.97.105://data/software/
+# 通过 yum 安装指定版本的 rpm 包
+cd /data/software
+sudo yum install gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm`
+# 或者使用 rpm 命令安装指定版本的 rpm 包
+rpm -Uvh gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm
+```
+
+/// 在线更新
+
+```sh
+# 查看版本列表
+yum list | grep gitlab
+yum --showduplicates list gitlab-ce
+# 更新到指定版本
+sudo yum install -y gitlab-ce-17.11.4
+```
+
+/// gitlab-ce 与内置的 PostgreSQL 版本不兼容，需要单独升级 PostgreSQL 版本。
+
+```sh
+gitlab-psql -V
+psql (PostgreSQL) 12.7
+
+gitlab-ctl pg-upgrade
+Checking for an omnibus managed postgresql: OK
+Checking if postgresql['version'] is set: OK
+Checking if we already upgraded: NOT OK
+Checking for a newer version of PostgreSQL to install
+Upgrading PostgreSQL to 13.11
+Checking if disk for directory /data/gitlab/postgresql/data has enough free space for PostgreSQL upgrade: OK
+Checking if PostgreSQL bin files are symlinked to the expected location: OK
+Waiting 30 seconds to ensure tasks complete before PostgreSQL upgrade.
+See https://docs.gitlab.com/omnibus/settings/database.html#upgrade-packaged-postgresql-server for details
+...
+==== Upgrade has completed ====
+Please verify everything is working and run the following if so
+sudo rm -rf /var/opt/gitlab/postgresql/data.12
+sudo rm -f /var/opt/gitlab/postgresql-version.old
+```
+
+### 备份
+
+<https://docs.gitlab.com/omnibus/settings/backups.html>
+
+设置数据备份路径
+
+```sh
+# 创建目录
+sudo mkdir -p /data/gitlab/backups
+# 编辑配置
+vim /etc/gitlab/gitlab.rb
+# 启用备份目录管理：设置ture时，该目录归运行GitLab的用户所有；设置false时，只有user['username'] 中指定的用户访问。
+# gitlab_rails['manage_backup_path'] = true
+# 默认路径 /var/opt/gitlab/backups
+# gitlab_rails['backup_path'] = "/data/gitlab/backups"
+# 生效配置
+sudo gitlab-ctl reconfigure
+```
+
+```bash
+# 停止可选服务
+sudo gitlab-ctl stop sidekiq
+# 验证状态：
+sudo gitlab-ctl status
+# 运行备份
+sudo gitlab-backup create
+# 备份文件确认
+cd /data/gitlab/backups
+# 复制到目标服务器
+scp 1667540632_2022_11_04_14.0.12_gitlab_backup.tar root@192.168.97.105://var/opt/gitlab/backups/
+```
+
+### 恢复
+
+<https://docs.gitlab.com/administration/backup_restore/restore_gitlab/>
+
+GitLab 的恢复操作用于从备份中恢复数据，以维持系统的连续性并应对数据丢失情况。
+
+恢复操作包括：
+
+- 恢复数据库记录和配置信息
+- 恢复 Git 仓库、容器镜像仓库中的镜像以及上传的内容
+- 恢复包仓库数据和 CI/CD 构建产物（artifacts）
+- 恢复用户账户和群组设置
+- 恢复项目和群组的 Wiki 页面
+- 恢复项目级别的安全文件
+- 恢复外部合并请求的差异（diff）内容
+
+> 恢复流程要求使用与备份**版本一致**的 GitLab 安装环境。
+
+1. 恢复的前提条件
+
+   - 目标 GitLab 实例必须已经正常运行
+     在执行恢复操作之前，你需要有一个正常运行的 GitLab 安装实例。这是因为执行恢复操作的系统用户（通常是 git 用户）通常没有权限创建或删除要导入数据的 SQL 数据库（例如 gitlabhq_production）。所有现有的数据将被清除（如 SQL 数据库）或者移动到其他目录（如仓库和上传文件）。SQL 数据恢复过程中会跳过由 PostgreSQL 扩展所拥有的视图。
+
+   - 目标 GitLab 实例必须是完全相同的版本
+     你只能将备份恢复到与其创建时**完全相同版本和类型**的 GitLab 上。
+     如果你的当前 GitLab 安装版本与备份版本不一致，则必须先对 GitLab 进行升级或降级，然后再进行恢复。
+
+   - 必须恢复 GitLab 密钥（secrets）
+     要成功恢复备份，还必须恢复 GitLab 的密钥文件。如果你正在迁移到新的 GitLab 实例上，则需要从旧服务器复制 GitLab 的密钥文件。这些密钥包括数据库加密密钥、CI/CD 变量以及用于双因素认证的变量。如果没有这些密钥，会导致多个问题，例如启用了双因素认证的用户无法访问系统，以及 GitLab Runner 无法登录等问题。
+
+     需要恢复的密钥文件包括：
+
+     - 对于 Linux 包安装方式：/etc/gitlab/gitlab-secrets.json
+     - 对于自行编译安装方式：/home/git/gitlab/.secret
+
+   - 某些 GitLab 配置必须与原始备份环境一致  
+     你可能需要单独恢复之前的配置文件 `/etc/gitlab/gitlab.rb`（适用于 Linux 包安装）或 `/home/git/gitlab/config/gitlab.yml`（适用于自行编译安装），以及任何 TLS 或 SSH 密钥和证书。
+
+     某些配置与 PostgreSQL 中的数据相关联。例如：
+
+     - 如果原始环境中配置了三个仓库存储路径，那么目标环境的配置中也必须至少包含这些相同的存储名称。
+     - 即使目标环境使用的是对象存储，从使用本地存储的环境中恢复备份时，仍将恢复到本地存储。迁移到对象存储的操作必须在恢复之前或之后完成。
+
+2. 针对 Linux 包安装方式的恢复流程
+
+   本流程假设你已经：
+
+   - 安装了与备份创建时**完全相同版本和类型**的 GitLab。
+   - 至少运行过一次 `sudo gitlab-ctl reconfigure` 命令。
+   - GitLab 当前正在运行。如果不是，请使用以下命令启动：`sudo gitlab-ctl start`
+
+   首先，确保你的备份 `.tar` 文件位于 `gitlab.rb` 配置中指定的备份目录中：  
+   `gitlab_rails['backup_path']`。默认路径是 `/var/opt/gitlab/backups`。  
+   该备份文件需要由 `git` 用户拥有。
+
+   Shell 示例：
+
+   ```bash
+   sudo scp 1751342891_2025_07_01_17.5.5_gitlab_backup.tar root@192.168.97.105://var/opt/gitlab/backups/
+   sudo chown git:git /var/opt/gitlab/backups/1751342891_2025_07_01_17.5.5_gitlab_backup.tar
    ```
 
-   保存文件后，重新配置 GitLab：
+   停止连接数据库的服务进程，但保留 GitLab 的其他部分继续运行：
+
+   ```bash
+   sudo gitlab-ctl stop puma
+   sudo gitlab-ctl stop sidekiq
+
+   # 验证状态：
+   sudo gitlab-ctl status
+   ```
+
+   接下来，请确保你已完成恢复前提条件中的步骤，并且在从原始安装复制了 GitLab 配置与密钥文件后，已执行过 `gitlab-ctl reconfigure`。
+
+   Shell 示例：
+
+   ```bash
+   # 复制备份的 gitlab.rb 配置文件到目标服务器
+   scp gitlab.rb root@192.168.97.105://etc/gitlab/
+   # 复制密钥文件到目标服务器
+   scp /etc/gitlab/gitlab-secrets.json root@192.168.97.105://etc/gitlab/
+   # 复制TLS证书到目标服务器
+   scp /etc/pki/tls/ssl/. root@192.168.97.105://etc/pki/tls/ssl/
+   # 执行
+   sudo gitlab-ctl reconfigure
+   ```
+
+   然后，开始恢复备份，需指定你要恢复的备份 ID：
+
+   ```bash
+   # 注意：名称中不包含 "_gitlab_backup.tar"
+   sudo gitlab-backup restore BACKUP=1751342891_2025_07_01_17.5.5
+   ```
+
+   > 如果备份文件中的 GitLab 版本与当前安装的版本不一致，恢复命令会中止并提示错误信息：`GitLab version mismatch`，请安装正确的 GitLab 版本后重试。
+
+   restore命令执行完成后，在 PostgreSQL 节点上执行重新配置：
 
    ```bash
    sudo gitlab-ctl reconfigure
    ```
 
-   平滑重载 NGINX 配置
-
-   在修改 NGINX 配置后，你可以使用以下命令**平滑重载配置**（不中断现有连接）：
+   然后启动并检查 GitLab 状态：
 
    ```bash
-   sudo gitlab-ctl hup nginx
+   sudo gitlab-ctl start
+   sudo gitlab-rake gitlab:check SANITIZE=true
+   # 验证数据库值是否可以解密，特别是当你恢复了 `/etc/gitlab/gitlab-secrets.json` 文件，或者目标服务器不是原来的服务器时：
+   sudo gitlab-rake gitlab:doctor:secrets
    ```
 
-   如需了解 `hup` 命令的更多细节，请参考 [NGINX 官方文档](https://nginx.org/en/docs/control.html)
+   为了进一步确认数据完整性，你可以对上传的文件执行完整性检查：
+
+   ```bash
+   sudo gitlab-rake gitlab:artifacts:check
+   sudo gitlab-rake gitlab:lfs:check
+   sudo gitlab-rake gitlab:uploads:check
+   ```
+
+   在恢复完成后，建议生成数据库统计信息以提升性能并避免 UI 中出现不一致问题：
+
+   进入数据库控制台，执行以下 SQL 命令：
+
+   ```sql
+   SET STATEMENT_TIMEOUT=0;
+   ANALYZE VERBOSE;
+   ```
+
+### 配置同时支持域名访问和内网访问
+
+要让 GitLab-CE 通过域名访问，同时内网访问时指向内网服务器，可以通过以下几种方式实现：
+
+方案一：使用 DNS 分流（推荐）
+
+1. 配置外部 DNS
+   - 公网域名解析指向你的公网 IP 或负载均衡器
+   - 例如：`gitlab.yourcompany.com` → 公网 IP
+
+2. 配置内网 DNS
+   - 在内网 DNS 服务器上为同一域名配置内网 IP
+   - 例如：`gitlab.yourcompany.com` → 192.168.1.100
+
+3. GitLab 配置
+    保持 `/etc/gitlab/gitlab.rb` 简单配置：
+
+    ```ruby
+    external_url 'https://gitlab.yourcompany.com'
+    ```
+
+方案二：使用 Nginx 多监听配置
+
+修改 GitLab 配置文件
+
+```ruby
+external_url 'https://gitlab.yourcompany.com'
+
+# 监听所有接口
+nginx['listen_addresses'] = ['0.0.0.0']
+
+# 同时监听内网IP
+nginx['additional_listen_addresses'] = {
+  '192.168.1.100:80' => {},
+  '192.168.1.100:443' => {
+    'ssl_certificate' => '/etc/gitlab/ssl/gitlab.yourcompany.com.crt',
+    'ssl_certificate_key' => '/etc/gitlab/ssl/gitlab.yourcompany.com.key'
+  }
+}
+```
+
+方案四：使用反向代理
+
+1. 内网部署 Nginx 反向代理
+
+    ```nginx
+    server {
+        listen 80;
+        server_name gitlab.yourcompany.com;
+        
+        location / {
+            proxy_pass http://192.168.1.100;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+    ```
+
+2. GitLab 配置
+
+    ```ruby
+    external_url 'https://gitlab.yourcompany.com'
+    nginx['listen_port'] = 8080
+    nginx['listen_addresses'] = ['127.0.0.1']
+    ```
+
+方案五：区分内外网域名
+
+```ruby
+# 主配置使用外网域名
+external_url 'https://gitlab.yourcompany.com'
+
+# 内网使用不同域名或主机名
+gitlab_rails['gitlab_ssh_host'] = 'gitlab.internal'
+```
+
+注意事项
+
+1. **SSL 证书**：确保为域名配置了有效的 SSL 证书
+2. **防火墙设置**：开放必要的端口（80, 443, 22等）
+3. **配置生效**：每次修改后运行：
+
+   ```bash
+   sudo gitlab-ctl reconfigure
+   sudo gitlab-ctl restart
+   ```
+
+4. **SSH 克隆**：如果需要内外网不同的 SSH 地址，可以设置：
+
+   ```ruby
+   gitlab_rails['gitlab_ssh_host'] = 'gitlab.internal'
+   ```
+
+验证配置
+
+1. 外网访问：
+
+   ```bash
+   curl -I https://gitlab.yourcompany.com
+   ```
+
+2. 内网访问
+
+   ```bash
+   curl -I http://192.168.1.100
+   ```
+
+选择哪种方案取决于你的网络架构和需求。对于大多数企业环境，方案一（DNS 分流）是最简单和可维护的解决方案。
 
 ## bug
 
@@ -753,7 +962,7 @@ proxy_set_header X-Forwarded-Proto https;
 proxy_set_header X-Forwarded-Ssl on;
 ```
 
-### ERROR: Registering runner... failed  
+### ERROR: Registering runner... failed
 
 `status=couldn't execute POST against https://gitlab.example.com/api/v4/runners: x509: certificate signed by unknown authority`
 
