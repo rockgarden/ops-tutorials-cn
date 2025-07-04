@@ -54,30 +54,30 @@ psql -h /var/opt/gitlab/postgresql -d gitlabhq_production
 `systemctl disable gitlab-runsvdir.service`
 
 1. 启用 HTTPS
-    /// 默认情况下，omnibus-gitlab 不使用 HTTPS。
-    `sudo vim /etc/gitlab/gitlab.rb`
+   /// 默认情况下，omnibus-gitlab 不使用 HTTPS。
+   `sudo vim /etc/gitlab/gitlab.rb`
 
-    ```rb
-    # 启用 https
-    external_url 'https://gitlib.eastcomccmp.top'
-    # 配置 nginx
-    nginx['enable'] = true
-    nginx['redirect_http_to_https'] = true
-    nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.crt"
-    nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.key"
-    ```
+   ```rb
+   # 启用 https
+   external_url 'https://gitlib.eastcomccmp.top'
+   # 配置 nginx
+   nginx['enable'] = true
+   nginx['redirect_http_to_https'] = true
+   nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.crt"
+   nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlib.eastccmp.top.key"
+   ```
 
-    /// 创建/etc/gitlab/ssl 目录并在那里复制您的密钥 gitlib.eastcomccmp.top.key 和证书 gitlib.eastcomccmp.top.crt。
-    `sudo mkdir -p /etc/gitlab/ssl`
-    `sudo chmod 755 /etc/gitlab/ssl`
-    `sudo cp gitlib.key gitlib.pem /etc/gitlab/ssl/`
-    /// 远程 Copy
-    `scp gitlib.key gitlib.pem root@192.168.97.115://etc/gitlab/ssl`
-    /// 运行重新配置命令
-    `sudo gitlab-ctl reconfigure`
-    /// GitLab 实例应该可以访问 <https://gitlib.eastcomccmp.top>
-    `sudo vim /var/opt/gitlab/gitlab-rails/etc/gitlab.yml`
-    `sudo vim /var/opt/gitlab/nginx/conf/gitlab-http.conf`
+   /// 创建/etc/gitlab/ssl 目录并在那里复制您的密钥 gitlib.eastcomccmp.top.key 和证书 gitlib.eastcomccmp.top.crt。
+   `sudo mkdir -p /etc/gitlab/ssl`
+   `sudo chmod 755 /etc/gitlab/ssl`
+   `sudo cp gitlib.key gitlib.pem /etc/gitlab/ssl/`
+   /// 远程 Copy
+   `scp gitlib.key gitlib.pem root@192.168.97.115://etc/gitlab/ssl`
+   /// 运行重新配置命令
+   `sudo gitlab-ctl reconfigure`
+   /// GitLab 实例应该可以访问 <https://gitlib.eastcomccmp.top>
+   `sudo vim /var/opt/gitlab/gitlab-rails/etc/gitlab.yml`
+   `sudo vim /var/opt/gitlab/nginx/conf/gitlab-http.conf`
 
 2. Embedded Nginx
    /// 用 ps 命令查看路径：
@@ -494,120 +494,120 @@ sudo gitlab-ctl hup nginx
 
 在 CentOS 7（以及 RedHat/Oracle/Scientific Linux 7）上
 
-1. 安装并配置必要的依赖关系  
+1. 安装并配置必要的依赖关系
 
-    ```sh
-    # 安装依赖
-    sudo yum install -y curl policycoreutils-python openssh-server
-    # 开启 SSH 访问权限
-    sudo systemctl enable sshd
-    sudo systemctl start sshd
-    # 开启 HTTP 访问权限
-    sudo firewall-cmd --permanent --add-service=http
-    sudo systemctl reload firewalld
-    ```
+   ```sh
+   # 安装依赖
+   sudo yum install -y curl policycoreutils-python openssh-server
+   # 开启 SSH 访问权限
+   sudo systemctl enable sshd
+   sudo systemctl start sshd
+   # 开启 HTTP 访问权限
+   sudo firewall-cmd --permanent --add-service=http
+   sudo systemctl reload firewalld
+   ```
 
-    接下来，安装 Postfix 以发送通知邮件。如果您希望使用其他方案来发送邮件，请跳过此步骤，并在安装 GitLab 后配置外部 SMTP 服务器。
+   接下来，安装 Postfix 以发送通知邮件。如果您希望使用其他方案来发送邮件，请跳过此步骤，并在安装 GitLab 后配置外部 SMTP 服务器。
 
-    ```sh
-    sudo yum install postfix
-    sudo systemctl enable postfix
-    sudo systemctl start postfix
-    ```
+   ```sh
+   sudo yum install postfix
+   sudo systemctl enable postfix
+   sudo systemctl start postfix
+   ```
 
-    在安装 Postfix 过程中可能会出现配置界面。请选择“Internet Site”，然后按回车键。在“mail name”一栏中，输入您的服务器的外部 DNS 名称，然后按回车键。如果后续还有其他配置界面出现，请继续按回车键以接受默认选项。
+   在安装 Postfix 过程中可能会出现配置界面。请选择“Internet Site”，然后按回车键。在“mail name”一栏中，输入您的服务器的外部 DNS 名称，然后按回车键。如果后续还有其他配置界面出现，请继续按回车键以接受默认选项。
 
-    /// 调整安装目录
-    GitLab 默认将其数据存储在 `/var/opt/gitlab` 目录中。如果您希望将数据存储在其他分区上，可以将该目录移动到新的位置，并创建一个指向它的符号链接。
+   /// 调整安装目录
+   GitLab 默认将其数据存储在 `/var/opt/gitlab` 目录中。如果您希望将数据存储在其他分区上，可以将该目录移动到新的位置，并创建一个指向它的符号链接。
 
-    例如，如果您希望将数据存储在 `/data/opt/gitlab` 中，可以按照以下步骤操作：
+   例如，如果您希望将数据存储在 `/data/opt/gitlab` 中，可以按照以下步骤操作：
 
-    ```sh
-    sudo mkdir -p /data/var/opt/gitlab
-    <!-- sudo gitlab-ctl stop -->
-    sudo mv /var/opt/gitlab/* /data/var/opt/gitlab/
-    sudo rm -rf /var/opt/gitlab
-    sudo ln -sf /data/var/opt/gitlab /var/opt/gitlab
-    ```
+   ```sh
+   sudo mkdir -p /data/var/opt/gitlab
+   <!-- sudo gitlab-ctl stop -->
+   sudo mv /var/opt/gitlab/* /data/var/opt/gitlab/
+   sudo rm -rf /var/opt/gitlab
+   sudo ln -sf /data/var/opt/gitlab /var/opt/gitlab
+   ```
 
-    > 注意：sudo ln 要在 sudo rm 之后执行，否则无法创建符号链接。
-    > 注意：如果你在安装 GitLab 之前更改了数据目录，请确保在 `/etc/gitlab/gitlab.rb` 中设置了 `git_data_dir` 和其他相关配置。
+   > 注意：sudo ln 要在 sudo rm 之后执行，否则无法创建符号链接。
+   > 注意：如果你在安装 GitLab 之前更改了数据目录，请确保在 `/etc/gitlab/gitlab.rb` 中设置了 `git_data_dir` 和其他相关配置。
 
 2. 在 GreatWall 内要添加 GitLab 软件包仓库并安装 GitLab 的步骤如下：
 
-    安装 cent-os 的配置时，可不新建 repo 文件，直接在 CentOS-Base.repo 最后加入文档中描述的内容：
+   安装 cent-os 的配置时，可不新建 repo 文件，直接在 CentOS-Base.repo 最后加入文档中描述的内容：
 
-    ```txt
-    [gitlab-ce]
-    name=Gitlab CE Repository
-    baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el$releasever/
-    gpgcheck=0
-    enabled=1
+   ```txt
+   [gitlab-ce]
+   name=Gitlab CE Repository
+   baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el$releasever/
+   gpgcheck=0
+   enabled=1
 
-    [root@localhost ~]# cat << EOF > /etc/yum.repos.d/gitlab-ce.repo
+   [root@localhost ~]# cat << EOF > /etc/yum.repos.d/gitlab-ce.repo
 
-    > [gitlab-ce]
-    > name=gitlab-ce
-    > baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/
-    > repo_gpgcheck=0
-    > gpgcheck=0
-    > enable=1
-    > gpgkey= https://packages.gitlab.com/gpg.key
-    > EOF
-    ```
+   > [gitlab-ce]
+   > name=gitlab-ce
+   > baseurl= https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/yum/el7/
+   > repo_gpgcheck=0
+   > gpgcheck=0
+   > enable=1
+   > gpgkey= https://packages.gitlab.com/gpg.key
+   > EOF
+   ```
 
-    后保存并运行：
-    yum clean all
-    yum makecache
-    yum update
-    yum install gitlab-ce
+   后保存并运行：
+   yum clean all
+   yum makecache
+   yum update
+   yum install gitlab-ce
 
-    注意：若已经运行过 Add the GitLab package repository 命令
-    `curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash`
-    需要删除  gitlab_gitlab-ce.repo / gitlab_gitlab-ee.repo 否则仍使用海外地址。
+   注意：若已经运行过 Add the GitLab package repository 命令
+   `curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash`
+   需要删除  gitlab_gitlab-ce.repo / gitlab_gitlab-ee.repo 否则仍使用海外地址。
 
-    接下来，安装 GitLab 软件包。将 <http://gitlab.example.com> 更改为您要访问您的 GitLab 实例的 URL。安装将自动配置并启动该 URL 的 GitLab。HTTPS 安装后需要额外的配置。
+   接下来，安装 GitLab 软件包。将 <http://gitlab.example.com> 更改为您要访问您的 GitLab 实例的 URL。安装将自动配置并启动该 URL 的 GitLab。HTTPS 安装后需要额外的配置。
 
-    `sudo EXTERNAL_URL="http://gitlab.example.com"`
-    `yum install -y gitlab-ce`
+   `sudo EXTERNAL_URL="http://gitlab.example.com"`
+   `yum install -y gitlab-ce`
 
 3. 访问主机名并登录
 
-    首次访问时，页面会将你重定向到密码重置界面。请输入初始管理员账户的密码，然后你会被重定向回登录界面。使用默认账户用户名 **root** 进行登录。
+   首次访问时，页面会将你重定向到密码重置界面。请输入初始管理员账户的密码，然后你会被重定向回登录界面。使用默认账户用户名 **root** 进行登录。
 
 4. 设置您的沟通偏好
 
-    如需获取有关漏洞和系统性能的**关键安全更新**，请访问我们的邮件订阅偏好中心订阅我们的专属安全通讯。
+   如需获取有关漏洞和系统性能的**关键安全更新**，请访问我们的邮件订阅偏好中心订阅我们的专属安全通讯。
 
-    **重要提示：** 如果您未订阅安全通讯，将**不会收到安全警报**。
+   **重要提示：** 如果您未订阅安全通讯，将**不会收到安全警报**。
 
 5. Make SSH Key
-    `ssh -keygen -t rsa -C "wangkan@eastcom.com" -b 4096`
-    pbcopy < /Users/wangkan/.ssh/id_gitlab_rsa.pub
-    Note：Enter passphrase (empty for no passphrase) :时，可以直接按两次回车键输入一个空的 passphrase；也可以选择输入一个 passphrase 口令，如果此时你输入了一个 passphrase，请牢记，之后每次提交时都需要输入这个口令来确认。
-    实践过程中 Android studio 如果有密码无法同步，建议不要密码。
-    获取 SSH 公钥信息：
-    SSH 密钥生成结束后，根据提示信息找到 SSH 目录，会看到私钥 id_rsa 和公钥 id_rsa.pub 这两个文件，不要把私钥文件 id_rsa 的信息透露给任何人。我们可以通过 cat 命令或文本编辑器来查看 id_rsa.pub 公钥信息。
-    （1）通过文本编辑器，如 Sublime Text 等软件打开 id_rsa.pub，复制里面的所有内容以备下一步使用。
-    （2）通过 cat 命令。在命令行中敲入 cat id_rsa.pub，回车执行后命令行界面中会显示 id_rsa.pub 文件里的内容，复制后在下一步使用。
-    （3）通过直接使用命令将 id_rsa.pub 文件里的内容复制到剪切板中
-    Windows: clip < ~/.ssh/id_rsa.pub
-    Mac: pbcopy < ~/.ssh/id_rsa.pub
-    GNU/Linux (requires xclip): xclip -sel clip < ~/.ssh/id_rsa.pub
+   `ssh -keygen -t rsa -C "wangkan@eastcom.com" -b 4096`
+   pbcopy < /Users/wangkan/.ssh/id_gitlab_rsa.pub
+   Note：Enter passphrase (empty for no passphrase) :时，可以直接按两次回车键输入一个空的 passphrase；也可以选择输入一个 passphrase 口令，如果此时你输入了一个 passphrase，请牢记，之后每次提交时都需要输入这个口令来确认。
+   实践过程中 Android studio 如果有密码无法同步，建议不要密码。
+   获取 SSH 公钥信息：
+   SSH 密钥生成结束后，根据提示信息找到 SSH 目录，会看到私钥 id_rsa 和公钥 id_rsa.pub 这两个文件，不要把私钥文件 id_rsa 的信息透露给任何人。我们可以通过 cat 命令或文本编辑器来查看 id_rsa.pub 公钥信息。
+   （1）通过文本编辑器，如 Sublime Text 等软件打开 id_rsa.pub，复制里面的所有内容以备下一步使用。
+   （2）通过 cat 命令。在命令行中敲入 cat id_rsa.pub，回车执行后命令行界面中会显示 id_rsa.pub 文件里的内容，复制后在下一步使用。
+   （3）通过直接使用命令将 id_rsa.pub 文件里的内容复制到剪切板中
+   Windows: clip < ~/.ssh/id_rsa.pub
+   Mac: pbcopy < ~/.ssh/id_rsa.pub
+   GNU/Linux (requires xclip): xclip -sel clip < ~/.ssh/id_rsa.pub
 
 6. Mac 要自己配置 config 来添加自定义的 SSH 私钥
 
-    github
+   github
 
-    Host github.com
-    HostName github.com
-    PreferredAuthentications publickey
-    IdentityFile ~/.ssh/id_rsa_github //github 对应的私钥
+   Host github.com
+   HostName github.com
+   PreferredAuthentications publickey
+   IdentityFile ~/.ssh/id_rsa_github //github 对应的私钥
 
-    wangkan$ cd /etc/ssh/
-    ssh wangkan$ ls ssh_config sshd_config
-    ssh wangkan$ vim ssh_config
-    ssh wangkan$ vim sshd_config
+   wangkan$ cd /etc/ssh/
+   ssh wangkan$ ls ssh_config sshd_config
+   ssh wangkan$ vim ssh_config
+   ssh wangkan$ vim sshd_config
 
 ### 升级
 
@@ -625,7 +625,7 @@ sudo gitlab-ctl hup nginx
 scp gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm root@192.168.97.105://data/software/
 # 通过 yum 安装指定版本的 rpm 包
 cd /data/software
-sudo yum install gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm`
+sudo yum install gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm
 # 或者使用 rpm 命令安装指定版本的 rpm 包
 rpm -Uvh gitlab-ce-16.3.9-ce.0.el7.x86_64.rpm
 ```
@@ -791,7 +791,7 @@ GitLab 的恢复操作用于从备份中恢复数据，以维持系统的连续�
 
    > 如果备份文件中的 GitLab 版本与当前安装的版本不一致，恢复命令会中止并提示错误信息：`GitLab version mismatch`，请安装正确的 GitLab 版本后重试。
 
-   restore命令执行完成后，在 PostgreSQL 节点上执行重新配置：
+   restore 命令执行完成后，在 PostgreSQL 节点上执行重新配置：
 
    ```bash
    sudo gitlab-ctl reconfigure
@@ -825,112 +825,302 @@ GitLab 的恢复操作用于从备份中恢复数据，以维持系统的连续�
 
 ### 配置同时支持域名访问和内网访问
 
-要让 GitLab-CE 通过域名访问，同时内网访问时指向内网服务器，可以通过以下几种方式实现：
-
-方案一：使用 DNS 分流（推荐）
+要让 GitLab-CE 统一通过域名+应用访问，同时确保内网访问时直接指向内网服务器，可通过使用 DNS 分流实现。
 
 1. 配置外部 DNS
+
    - 公网域名解析指向你的公网 IP 或负载均衡器
-   - 例如：`gitlab.yourcompany.com` → 公网 IP
+   - 设置 `www.yourcompany.com` → 公网 IP → Nginx 代理
+     - Nginx 代理：请求路径若为 <https://www.yourcompany.com/egitlab/> → 内网 GitLab IP
 
 2. 配置内网 DNS
-   - 在内网 DNS 服务器上为同一域名配置内网 IP
-   - 例如：`gitlab.yourcompany.com` → 192.168.1.100
+
+   - 在内网 DNS 服务器上为同一域名配置内网 Nginx 代理 IP
+   - 设置：`www.yourcompany.com` → Nginx 代理
+     - Nginx 代理：请求路径若为 <https://www.yourcompany.com/egitlab/> → 内网 GitLab IP
 
 3. GitLab 配置
-    保持 `/etc/gitlab/gitlab.rb` 简单配置：
+   保持 `/etc/gitlab/gitlab.rb` 简单配置：
 
-    ```ruby
-    external_url 'https://gitlab.yourcompany.com'
-    ```
+   ```ruby
+   # 设置外部访问 URL（确保与外部 Nginx 配置一致）
+   external_url 'http://gitlab.example.com'  # 替换为你的域名
 
-方案二：使用 Nginx 多监听配置
+   # 配置 gitlab-workhorse 使用 TCP 监听（默认端口 8181）
+   gitlab_workhorse['listen_network'] = "tcp"
+   # 绑定到本地端口（避免暴露到公网）
+   gitlab_workhorse['listen_addr'] = "127.0.0.1:8181"
 
-修改 GitLab 配置文件
+   # 确保外部 Nginx 能访问 workhorse，如果 Nginx 和 GitLab 不在同一台机器，需添加 Nginx 的 IP 到信任代理列表
+   gitlab_rails['trusted_proxies'] = ['127.0.0.1', '外部Nginx的IP']
+   ```
 
-```ruby
-external_url 'https://gitlab.yourcompany.com'
+   同时需要配置 GitLab Workhorse 通过 TCP 模式运行（而不是默认的 Unix socket），并确保 GitLab Rails（Puma）能正确与 Workhorse 通信，以下是正确的配置方法：
 
-# 监听所有接口
-nginx['listen_addresses'] = ['0.0.0.0']
+   在 GitLab 17.11 中，Puma 会自动通过 Workhorse 的 Unix socket 或 TCP 地址通信，但你需要确保：
 
-# 同时监听内网IP
-nginx['additional_listen_addresses'] = {
-  '192.168.1.100:80' => {},
-  '192.168.1.100:443' => {
-    'ssl_certificate' => '/etc/gitlab/ssl/gitlab.yourcompany.com.crt',
-    'ssl_certificate_key' => '/etc/gitlab/ssl/gitlab.yourcompany.com.key'
-  }
-}
-```
+   - **如果 Workhorse 使用 TCP**，GitLab Rails 需要知道 Workhorse 的 TCP 地址。
+   - **如果 Workhorse 使用 Unix socket**（默认），则无需额外配置。
 
-方案四：使用反向代理
+   如果你使用 Nginx（默认情况），GitLab 会自动调整 Nginx 配置，使其指向 Workhorse 的 TCP 或 Unix socket 地址。你可以检查：
 
-1. 内网部署 Nginx 反向代理
+   ```bash
+   sudo cat /var/opt/gitlab/nginx/conf/gitlab-http.conf
+   ```
 
-    ```nginx
-    server {
-        listen 80;
-        server_name gitlab.yourcompany.com;
-        
-        location / {
-            proxy_pass http://192.168.1.100;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-    }
-    ```
+   查找类似的行：
 
-2. GitLab 配置
+   ```conf
+   location / {
+      # Unix socket 模式
+      proxy_pass http://unix:/var/opt/gitlab/gitlab-workhorse/sockets/socket;
+      # TCP 模式
+      proxy_pass http://gitlab-workhorse;
+   }
+   ```
 
-    ```ruby
-    external_url 'https://gitlab.yourcompany.com'
-    nginx['listen_port'] = 8080
-    nginx['listen_addresses'] = ['127.0.0.1']
-    ```
-
-方案五：区分内外网域名
-
-```ruby
-# 主配置使用外网域名
-external_url 'https://gitlab.yourcompany.com'
-
-# 内网使用不同域名或主机名
-gitlab_rails['gitlab_ssh_host'] = 'gitlab.internal'
-```
-
-注意事项
-
-1. **SSL 证书**：确保为域名配置了有效的 SSL 证书
-2. **防火墙设置**：开放必要的端口（80, 443, 22等）
-3. **配置生效**：每次修改后运行：
+   重新配置并重启 GitLab
 
    ```bash
    sudo gitlab-ctl reconfigure
    sudo gitlab-ctl restart
    ```
 
-4. **SSH 克隆**：如果需要内外网不同的 SSH 地址，可以设置：
+   验证 Workhorse 是否运行在 TCP 模式
+
+   ```bash
+   sudo gitlab-ctl status | grep workhorse
+   # 检查 Workhorse 是否监听 TCP
+   ss -tulnp | grep 8181
+   ```
+
+   检查日志：
+
+   ```bash
+   sudo tail -f /var/log/gitlab/gitlab-workhorse/current
+   ```
+
+   如果 Workhorse 正确运行在 TCP 模式，你会看到类似：
+
+   ```log
+   {"level":"info","time":"2024-07-03T12:00:00Z","msg":"Starting listener","address":"127.0.0.1:8181","network":"tcp"}
+   ```
+
+4. 外部 Nginx 的配置
+
+   在外部 Nginx 的配置文件（如 /etc/nginx/conf.d/gitlab.conf）中，添加反向代理规则：
+
+   ```conf
+   upstream gitlab-workhorse {
+   server 127.0.0.1:8181;  # 指向 gitlab-workhorse 的 TCP 端口
+   }
+
+   server {
+   listen 80;
+   server_name gitlab.example.com;  # 替换为你的域名
+
+   location / {
+      client_max_body_size 0;  # 禁用大小限制（或设置为足够大的值，如 50m）
+      proxy_http_version 1.1;
+      # 确保正确的 HTTP 头传递，避免 GitLab 返回 422 错误
+      proxy_set_header Host $host;
+      proxy_set_header X-Forwarded-Ssl on;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+
+      # 反向代理到 gitlab-workhorse 的 TCP 端口
+      proxy_pass http://gitlab-workhorse;
+   }
+   }
+   ```
+
+5. 重启 GitLab 和 Nginx
+
+   ```bash
+   sudo gitlab-ctl reconfigure  # 应用 GitLab 配置
+   sudo gitlab-ctl restart     # 重启 GitLab 相关服务
+   sudo systemctl restart nginx  # 重启外部 Nginx
+   ```
+
+   若要同时支持使用 内网 GitLab IP 访问，则要配置 Nginx 多监听：
+
+   修改 GitLab 配置文件
 
    ```ruby
-   gitlab_rails['gitlab_ssh_host'] = 'gitlab.internal'
+   external_url 'https://www.yourcompany.com/egitlab/'
+
+   # 启用监听所有接口
+   nginx['listen_addresses'] = ['*', '[::]']
+
+   # 同时监听内网IP
+   nginx['additional_listen_addresses'] = {
+      '192.168.1.100:80' => {},
+      '192.168.1.100:443' => {
+         'ssl_certificate' => '/etc/gitlab/ssl/gitlab.yourcompany.com.crt',
+         'ssl_certificate_key' => '/etc/gitlab/ssl/gitlab.yourcompany.com.key'
+      }
+   }
    ```
 
-验证配置
+   1. 若要保持 gitlab_workhorse 使用 Unix 套接字通信
+      在外部 Nginx 的配置文件中（如 /etc/nginx/conf.d/gitlab.conf），添加以下内容：
 
-1. 外网访问：
+   ```conf
+   upstream gitlab-workhorse {
+   server unix:/var/opt/gitlab/gitlab-workhorse/sockets/socket;
+   }
+
+   server {
+   listen 80;
+   server_name gitlab.example.com;  # 替换为你的域名
+
+   location / {
+      client_max_body_size 0;  # 禁用大小限制（或设置为足够大的值，如 50m）
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+
+      # 反向代理到 gitlab-workhorse 的 Unix 套接字
+      proxy_pass http://gitlab-workhorse;
+   }
+   }
+   ```
+
+#### 优化配置提高性能和安全性
+
+1. 禁用内置 Nginx
+   首先，在 GitLab 配置中禁用内置的 Nginx 服务器：
+
+   ```ruby
+   # /etc/gitlab/gitlab.rb
+   nginx['enable'] = false
+   web_server['external_users'] = ['nginx']
+   ```
+
+2. 外部 Nginx 优化配置
+   创建一个专用的 Nginx 配置文件（如 `/etc/nginx/conf.d/gitlab.conf`）：
+
+   ```nginx
+   upstream gitlab-workhorse {
+   server unix:/var/opt/gitlab/gitlab-workhorse/socket fail_timeout=0;
+   }
+
+   server {
+   listen 80;
+   server_name gitlab.example.com;
+   server_tokens off;
+   return 301 https://$host$request_uri;
+   }
+
+   server {
+   listen 443 ssl http2;
+   server_name gitlab.example.com;
+
+   # SSL 配置
+   ssl_certificate /etc/ssl/certs/gitlab.crt;
+   ssl_certificate_key /etc/ssl/private/gitlab.key;
+   ssl_protocols TLSv1.2 TLSv1.3;
+   ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
+   ssl_prefer_server_ciphers on;
+   ssl_session_cache shared:SSL:10m;
+   ssl_session_timeout 10m;
+
+   # 安全头
+   add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+   add_header X-Content-Type-Options nosniff;
+   add_header X-Frame-Options SAMEORIGIN;
+   add_header X-XSS-Protection "1; mode=block";
+   add_header Referrer-Policy "strict-origin-when-cross-origin";
+
+   # 性能优化
+   client_max_body_size 0;
+   chunked_transfer_encoding on;
+   keepalive_timeout 65;
+   sendfile on;
+   tcp_nopush on;
+   tcp_nodelay on;
+
+   # 静态资源缓存
+   location ~ ^/assets/ {
+      root /opt/gitlab/embedded/service/gitlab-rails/public;
+      gzip_static on;
+      expires max;
+      add_header Cache-Control public;
+   }
+
+   # GitLab 主配置
+   location / {
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Ssl on;
+      proxy_pass http://gitlab-workhorse;
+      proxy_http_version 1.1;
+      proxy_read_timeout 300;
+      proxy_cache off;
+   }
+
+   # WebSocket 支持
+   location /-/cable {
+      proxy_pass http://gitlab-workhorse;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+   }
+
+   # 禁止访问 .git 目录
+   location ~ /\.git {
+      deny all;
+      return 404;
+   }
+
+   access_log /var/log/nginx/gitlab_access.log combined;
+   error_log /var/log/nginx/gitlab_error.log;
+   }
+   ```
+
+3. 性能调优参数
+   在 `/etc/gitlab/gitlab.rb` 中添加 Workhorse 调优：
+
+   ```ruby
+   gitlab_workhorse['listen_network'] = "unix"
+   gitlab_workhorse['listen_addr'] = "/var/opt/gitlab/gitlab-workhorse/socket"
+   gitlab_workhorse['auth_backend'] = "http://localhost:8080" # 默认的 GitLab Rails 端口
+
+   # 根据服务器内存调整
+   unicorn['worker_processes'] = 4
+   postgresql['shared_buffers'] = "256MB"
+   puma['worker_processes'] = 4
+   ```
+
+4. 应用配置
+   应用更改并重启服务：
 
    ```bash
-   curl -I https://gitlab.yourcompany.com
+   sudo gitlab-ctl reconfigure
+   sudo systemctl restart nginx
    ```
 
-2. 内网访问
+5. 监控与维护
+   设置日志轮转：
 
    ```bash
-   curl -I http://192.168.1.100
+   sudo cp /etc/logrotate.d/nginx /etc/logrotate.d/nginx.bak
+   sudo nano /etc/logrotate.d/nginx
    ```
 
-选择哪种方案取决于你的网络架构和需求。对于大多数企业环境，方案一（DNS 分流）是最简单和可维护的解决方案。
+   添加压缩和保留配置：
+
+   ```txt
+   rotate 30
+   daily
+   compress
+   delaycompress
+   ```
 
 ## bug
 

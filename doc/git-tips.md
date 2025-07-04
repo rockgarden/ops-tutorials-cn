@@ -1,5 +1,9 @@
 # 常用git组合操作
 
+修改远程仓库地址
+
+`git remote set-url origin http://new-server.com/user/repo.git`
+
 ## Fork 操作
 
 1. B 首先要 fork 一个。
@@ -285,7 +289,7 @@ git clone --mirror git://example.com/some-big-repo.git
 现在你可以运行 BFG 来清理你的仓库了：
 
 ```bash
-java -jar bfg.jar --strip-blobs-bigger-than 100M some-big-repo.git
+java -jar bfg-1.13.0.jar --strip-blobs-bigger-than 100M some-big-repo.git
 ```
 
 BFG 会更新你的提交记录以及所有分支和标签，使它们变得干净。但请注意，**BFG 并不会物理删除那些不需要的数据**。你需要使用标准的 `git gc` 命令来真正清除这些不再需要的“脏”数据，Git 此时已经把这些数据标记为多余内容：
@@ -302,3 +306,33 @@ git push
 ```
 
 至此，你的仓库就已经清理完毕了。现在建议所有团队成员**丢弃他们本地旧的仓库副本**，从新的、干净的仓库重新克隆。最好**彻底删除旧的克隆副本**，因为它们仍然保留着“脏”的历史记录，可能会意外地再次推送到你刚刚清理过的新仓库中。
+
+```log
+git push
+Enumerating objects: 26935, done.
+error: RPC failed; HTTP 413 curl 22 The requested URL returned error: 413
+send-pack: unexpected disconnect while reading sideband packet
+Writing objects: 100% (26935/26935), 17.66 MiB | 20.50 MiB/s, done.
+Total 26935 (delta 0), reused 0 (delta 0), pack-reused 26935 (from 1)
+fatal: the remote end hung up unexpectedly
+Everything up-to-date
+```
+
+错误是因为你尝试推送的数据量太大，超过了 Git 服务器（如 GitHub、GitLab 等）的 HTTP 请求大小限制（HTTP 413 错误）。
+
+处理：使用 SSH 替代 HTTPS（推荐）
+
+修改 GitLab 的 Nginx 配置
+
+`sudo vim /etc/gitlab/gitlab.rb`
+
+```ruby
+nginx['client_max_body_size'] = '1024m'  # 默认可能是 10m 或 250m，调整到 1GB 或更大
+```
+
+```sh
+sudo gitlab-ctl reconfigure
+sudo gitlab-ctl restart
+```
+
+> 还要修改外部的代理nginx。

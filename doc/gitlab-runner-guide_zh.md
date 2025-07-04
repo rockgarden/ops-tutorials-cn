@@ -24,8 +24,36 @@ Git基础
         例如，在基于 Debian 的 Linux 系统上，我们可以通过添加官方 GitLab 仓库并使用 [`apt`](https://www.baeldung.com/linux/debian-installing-packages-url#1-apt-advanced-packaging-tool) 包管理器安装 `gitlab-runner` 软件包：
 
         ```bash
+        # 添加 GitLab Runner 仓库
         curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
+        # 保持 Runner 主版本与 GitLab 一致（如 17.x 配 17.x）
         sudo apt-get install gitlab-runner
+        ```
+
+        yum：
+
+        ```bash
+        # 添加 GitLab Runner 仓库
+        curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash
+        # 保持 Runner 主版本与 GitLab 一致（如 17.x 配 17.x）
+        sudo yum install gitlab-runner
+        ```
+
+        Anolis 8环境安装：
+
+        ```bash
+        # os=centos 表示使用 CentOS 兼容仓库，dist=8 对应 Anolis 8
+        sudo curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/config_file.repo?os=centos&dist=8&source=script" \
+            --header 'User-Agent: Mozilla/5.0' \
+            -o /etc/yum.repos.d/runner_gitlab-runner.repo
+        # 安装特定版本（如 17.11.3）
+        sudo yum install gitlab-runner-17.11.3-1
+        # 设置开机自启
+        sudo systemctl enable --now gitlab-runner
+        # 检查版本
+        gitlab-runner --version
+        # 查看运行状态
+        gitlab-runner status
         ```
 
         这段脚本会下载 GitLab Runner 的安装脚本，并以超级用户权限执行它。它将配置仓库并添加必要的系统设置。
@@ -46,13 +74,26 @@ Git基础
 
         此命令会提示输入多个信息，如 GitLab 实例的 URL、注册令牌、Runner 描述以及执行器类型（如 shell、Docker、Kubernetes）等。
 
-        下面是一个使用 shell 执行器注册 Runner 的示例：
+        注册完成后，Runner 即可开始接收 GitLab 的任务。
 
-        ```bash
-        sudo gitlab-runner register
+        示例：
+
+        ```sh
+        sudo gitlab-runner register \
+        --url "https://www.eastcomccmp.top/egitlab" \
+        --registration-token "glrt-yPAW4Qy8sysQikxs54t7" \
+        --description "shell-runner-shared" \
+        --tag-list "shell,anolis" \
+        --executor "shell" \
+        --non-interactive
         ```
 
-        然后按照提示输入相关信息，注册完成后，Runner 即可开始接收 GitLab 的任务。
+        ```sh
+        # 检查Runner连接状态
+        gitlab-runner verify
+        # 查看已注册Runner  
+        gitlab-runner list
+        ```
 
     3. 配置 Runner
 
