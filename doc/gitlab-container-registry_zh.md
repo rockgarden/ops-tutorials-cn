@@ -126,7 +126,7 @@ GitLab
 
     2. 在 GitLab CI/CD 中使用容器仓库
 
-        GitLab 容器仓库最强大的功能之一是与 [CI/CD](https://www.baeldung.com/ops/gitlab-runner-guide#gitlab-cicd-configuration) 流水线的集成。通过使用 GitLab 提供的[预定义 CI 变量](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html)如 `CI_REGISTRY`、`CI_REGISTRY_USER` 和 `CI_REGISTRY_PASSWORD`，我们可以自动化认证和交互过程：
+        GitLab 容器仓库最强大的功能之一是与 CI/CD 流水线的集成。通过使用 GitLab 提供的[预定义 CI 变量](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html)如 `CI_REGISTRY`、`CI_REGISTRY_USER` 和 `CI_REGISTRY_PASSWORD`，我们可以自动化认证和交互过程：
 
         ```yaml
         build:

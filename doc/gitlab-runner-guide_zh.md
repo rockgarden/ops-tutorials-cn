@@ -220,6 +220,33 @@ Git基础
 
         GitLab Runner 会按顺序执行这些命令，如果任何命令执行失败（返回非零退出码），任务将标记为失败。
 
+        1. 执行 mvn 命令
+
+            Error：bash: line 169: mvn: command not found
+
+            修正权限和 PATH
+
+            ```sh
+            # 1. 将 Maven 所在目录加入全局 PATH（对所有用户生效）
+            echo 'export PATH=$PATH:/usr/share/maven/bin' | sudo tee /etc/profile.d/maven.sh
+            sudo chmod +x /etc/profile.d/maven.sh
+
+            # 2. 确保 gitlab-runner 有权限访问 Maven
+            sudo chmod -R a+rX /usr/share/maven  # 允许所有用户读取和执行
+
+            # 3. 测试 gitlab-runner 能否调用 Maven
+            sudo -u gitlab-runner -i mvn --version
+            ```
+
+            在 CI 脚本中直接指定 mvn 的绝对路径：
+
+            ```yml
+            script:
+                - /usr/share/maven/bin/mvn org.owasp:dependency-check-maven:check
+            ```
+
+            最优方案是使用 Docker Runner，直接使用官方 Maven 镜像，可避免环境问题。
+
     3. 在 GitLab Runner 中使用 Docker
 
         Docker 是运行任务的流行选择，因为它可以在隔离和可复现的环境中执行任务。GitLab Runner 内置支持 Docker，允许我们在 Docker 容器中运行任务。

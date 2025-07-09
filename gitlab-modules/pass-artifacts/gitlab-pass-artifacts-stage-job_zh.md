@@ -23,7 +23,7 @@ GitLab
 
     GitLab 默认会让作业下载前一阶段所有作业产生的 artifacts。但是，我们可以使用 [dependencies](https://docs.gitlab.com/ee/ci/yaml/#dependencies) 关键字来控制这种行为。
 
-    下面是一个 [.gitlab-ci.yml](https://www.baeldung.com/ops/gitlab-runner-guide#1-creating-agitlab-ciyml-file) 文件示例，其中包含三个作业，分别位于不同的阶段，并使用 [artifacts](https://docs.gitlab.com/ee/ci/yaml/#artifacts) 关键字定义了构建产物：
+    下面是一个 .gitlab-ci.yml 文件示例，其中包含三个作业，分别位于不同的阶段，并使用 [artifacts](https://docs.gitlab.com/ee/ci/yaml/#artifacts) 关键字定义了构建产物：
 
     ```yaml
     stages:
