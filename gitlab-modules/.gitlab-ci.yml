@@ -21,7 +21,7 @@ dependency_scanning:
   variables:
     # Java/Maven 配置
     DS_JAVA_VERSION: "8"
-    # 缓存本项目 Maven 仓库加速构建
+    # 缓存本项目 Maven 仓库加速构建，每个项目独立仓库，确保安全性与隔离性
     MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
 
     # JavaScript 配置（如果项目中有package.json）
